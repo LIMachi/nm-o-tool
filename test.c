@@ -6,7 +6,7 @@
 /*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/08/02 21:12:04 by hmartzol          #+#    #+#             */
-/*   Updated: 2018/08/03 00:28:37 by hmartzol         ###   ########.fr       */
+/*   Updated: 2018/08/03 23:41:48 by hmartzol         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,6 +50,12 @@
 #include <mach-o/loader.h>
 #include <mach-o/nlist.h>
 
+#include <string.h>
+
+/*
+** strcmp
+*/
+
 /*
 ** mac executable
 ** MH_MAGIC_64, MH_MAGIC, mach_header, mach_header_64, load_command,
@@ -82,27 +88,76 @@ void	error(const char *str)
 	exit(EXIT_FAILURE);
 }
 
+typedef struct	s_nm_sym
+{
+	size_t		value;
+	char		type;
+	char		*str;
+}				t_nm_sym;
+
+/*
+** like a strlen
+*/
+
+static inline size_t	mem_validate_null_string(const char *buff,
+											const size_t size, const char *str)
+{
+	size_t	out;
+
+	if ((size_t)str < (size_t)buff || (size_t)str >= (size_t)buff + size)
+		return (-1);
+	out = 0;
+	while ((size_t)str + out < (size_t)buff + size && str[out] != '\0')
+		++out;
+	if ((size_t)str + out >= (size_t)buff + size)
+		return (-1);
+	return (out);
+}
+
+int	nm_sym_cmp(const void *a, const void *b)
+{
+	return (strcmp(((t_nm_sym *)a)->str, ((t_nm_sym *)b)->str));
+}
+
 int	nm_64_sym(const char *buff, const size_t size, struct symtab_command sc)
 {
 	size_t			i;
 	char			*strings;
 	struct nlist_64	*nl;
+	t_nm_sym		*nm_sym;
 
 	i = -1;
 	nl = mem_acces(buff, size, sc.symoff, buff);
 	mem_acces(buff, size, sc.nsyms * sizeof(struct nlist_64), nl);
 	strings = mem_acces(buff, size, sc.stroff, buff);
+	nm_sym = malloc(sizeof(*nm_sym) * sc.nsyms);
 	while (++i < sc.nsyms)
 	{
-		char *tmp = (char*)mem_acces(buff, size, nl[i].n_un.n_strx, strings);
-		char c = '*'; //FIXME: faire les autres charactères
-		if ((nl[i].n_type & N_TYPE) == N_SECT)
-			c = nl[i].n_type & N_EXT ? 'T' : 't';
-		if ((nl[i].n_type & N_TYPE) != N_UNDF)
-			fprintf(stdout, "%016llx %c %s\n", nl[i].n_value, c, tmp);
-		else
-			fprintf(stdout, "                 U %s\n", tmp);
+		nm_sym[i].value = nl[i].n_value;
+		nm_sym[i].type = '*';
+		if ((nl[i].n_type & N_TYPE) == N_UNDF)
+			nm_sym[i].type = 'U';
+		else if ((nl[i].n_type & N_TYPE) == N_SECT)
+			nm_sym[i].type = nl[i].n_type & N_EXT ? 'T' : 't';
+		nm_sym[i].str = mem_acces(buff, size, nl[i].n_un.n_strx, strings);
+		if (mem_validate_null_string(buff, size, nm_sym[i].str) == (size_t)-1)
+			error("");
+		// char *tmp = (char*)mem_acces(buff, size, nl[i].n_un.n_strx, strings);
+		// char c = '*'; //FIXME: faire les autres charactères
+		// if ((nl[i].n_type & N_TYPE) == N_SECT)
+		// 	c = nl[i].n_type & N_EXT ? 'T' : 't';
+		// if ((nl[i].n_type & N_TYPE) != N_UNDF)
+		// 	fprintf(stdout, "%016llx %c %s\n", nl[i].n_value, c, tmp);
+		// else
+		// 	fprintf(stdout, "                 U %s\n", tmp);
 	}
+	qsort(nm_sym, sc.nsyms, sizeof(*nm_sym), &nm_sym_cmp);
+	i = -1;
+	while (++i < sc.nsyms)
+		if (nm_sym[i].type == 'U')
+			fprintf(stdout, "                 U %s\n", nm_sym[i].str);
+		else
+			fprintf(stdout, "%016lx %c %s\n", nm_sym[i].value, nm_sym[i].type, nm_sym[i].str);
 	return (0);
 }
 
