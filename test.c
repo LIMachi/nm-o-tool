@@ -6,7 +6,7 @@
 /*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/08/02 21:12:04 by hmartzol          #+#    #+#             */
-/*   Updated: 2018/08/03 23:41:48 by hmartzol         ###   ########.fr       */
+/*   Updated: 2018/08/11 08:45:17 by hmartzol         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -119,6 +119,59 @@ int	nm_sym_cmp(const void *a, const void *b)
 	return (strcmp(((t_nm_sym *)a)->str, ((t_nm_sym *)b)->str));
 }
 
+//UTDBCI- (lower case for non-external)
+//U: undefined
+//A: absolute
+//T: text
+//D: data
+//B: bss
+//C: common
+//'-' debugger symbol
+//S: section not corespondig to any other character
+//I: indirect
+
+//options:
+//-a: all symbol entries
+//-g: only external
+//-n: sort numerically after alphabetically
+//-o: prepend file or archive element to each line
+//-p: symbol-table order (no sort)
+//-r: reverse sort
+//-u: only undefined
+//-U: don't display undefined
+//-m: extend format of type instead of letters
+//-x: hexadecimal print of type + position of symbol table
+//-j: only names of symbols, no type or position
+//-s segname sectname: only list symbols in section (segname, sectname)
+//-s (segname,sectname): used version of andling -s (only one string)
+//-arch: architecture to be printed in fat files, all is an option
+//--arch: used version of andling -arch
+//-f format: bsd, sysv, posix, darwin
+//-A: same as -o, but print full path
+//-P: portable output (which ever this means)
+//-t format: precise the format to be used by -P
+//	d: decimal, o: octal, x: hexadecimal
+//-L: see man, i'm tired
+
+char nm_type(uint8_t n_type)
+{
+	uint8_t	type;
+	char	out;
+
+	if (n_type & N_STAB)
+		return ('-');
+	out = ' ';
+	type = N_TYPE & n_type;
+	out = type == N_UNDF ? 'U' : out;
+	out = type == N_ABS ? 'A' : out;
+	out = type == N_SECT ? 'T' : out;
+	out = type == N_PBUD ? 'C' : out;
+	out = type == N_INDR ? 'I' : out;
+	if (!(n_type & N_EXT))
+		out += 'a' - 'A';
+	return (out);
+}
+
 int	nm_64_sym(const char *buff, const size_t size, struct symtab_command sc)
 {
 	size_t			i;
@@ -134,22 +187,10 @@ int	nm_64_sym(const char *buff, const size_t size, struct symtab_command sc)
 	while (++i < sc.nsyms)
 	{
 		nm_sym[i].value = nl[i].n_value;
-		nm_sym[i].type = '*';
-		if ((nl[i].n_type & N_TYPE) == N_UNDF)
-			nm_sym[i].type = 'U';
-		else if ((nl[i].n_type & N_TYPE) == N_SECT)
-			nm_sym[i].type = nl[i].n_type & N_EXT ? 'T' : 't';
+		nm_sym[i].type = nm_type(nl[i].n_type);
 		nm_sym[i].str = mem_acces(buff, size, nl[i].n_un.n_strx, strings);
 		if (mem_validate_null_string(buff, size, nm_sym[i].str) == (size_t)-1)
 			error("");
-		// char *tmp = (char*)mem_acces(buff, size, nl[i].n_un.n_strx, strings);
-		// char c = '*'; //FIXME: faire les autres charactères
-		// if ((nl[i].n_type & N_TYPE) == N_SECT)
-		// 	c = nl[i].n_type & N_EXT ? 'T' : 't';
-		// if ((nl[i].n_type & N_TYPE) != N_UNDF)
-		// 	fprintf(stdout, "%016llx %c %s\n", nl[i].n_value, c, tmp);
-		// else
-		// 	fprintf(stdout, "                 U %s\n", tmp);
 	}
 	qsort(nm_sym, sc.nsyms, sizeof(*nm_sym), &nm_sym_cmp);
 	i = -1;
