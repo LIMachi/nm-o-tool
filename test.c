@@ -6,7 +6,7 @@
 /*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/08/02 21:12:04 by hmartzol          #+#    #+#             */
-/*   Updated: 2018/08/11 08:45:17 by hmartzol         ###   ########.fr       */
+/*   Updated: 2018/08/15 12:20:17 by hmartzol         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -130,7 +130,7 @@ int	nm_sym_cmp(const void *a, const void *b)
 //S: section not corespondig to any other character
 //I: indirect
 
-//options:
+//options: (mac)
 //-a: all symbol entries
 //-g: only external
 //-n: sort numerically after alphabetically
@@ -153,22 +153,29 @@ int	nm_sym_cmp(const void *a, const void *b)
 //	d: decimal, o: octal, x: hexadecimal
 //-L: see man, i'm tired
 
-char nm_type(uint8_t n_type)
+char nm_type_char(uint8_t n_type, uint64_t value, uint64_t nsect, t_nm_env *env)
 {
 	uint8_t	type;
 	char	out;
 
 	if (n_type & N_STAB)
-		return ('-');
-	out = ' ';
+		return ((char)'-');
+	out = (char)'?';
 	type = N_TYPE & n_type;
-	out = type == N_UNDF ? 'U' : out;
-	out = type == N_ABS ? 'A' : out;
-	out = type == N_SECT ? 'T' : out;
-	out = type == N_PBUD ? 'C' : out;
-	out = type == N_INDR ? 'I' : out;
-	if (!(n_type & N_EXT))
-		out += 'a' - 'A';
+	if (type == N_UNDF)
+		out = value ? (char)'c' : (char)'u';
+	if (type == N_SECT)
+	{
+		out = (char)'s';
+		out = nsect == env->bss_sect ? (char)'b' : out;
+		out = nsect == env->data_sect ? (char)'d' : out;
+		out = nsect == env->text_sect ? (char)'t' : out;
+	}
+	out = type == N_ABS ? (char)'a' : out;
+	out = type == N_PBUD ? (char)'u' : out;
+	out = type == N_INDR ? (char)'i' : out;
+	if (n_type & N_EXT && out != (char)'?')
+		out += (char)'A' - (char)'a';
 	return (out);
 }
 

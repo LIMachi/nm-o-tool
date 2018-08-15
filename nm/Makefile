@@ -1,5 +1,5 @@
 AUTHOR := hmartzol
-NAME := ft_nm
+NAME := ../ft_nm
 EXEARGS :=
 SRCDIR := src
 INCDIRS := inc
