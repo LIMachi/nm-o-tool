@@ -1,2 +1,6 @@
 ITEMS = 	main \
-	nm
+	mem_access \
+	mem_validate_null_string \
+	nm \
+	nm_type_char \
+	swap

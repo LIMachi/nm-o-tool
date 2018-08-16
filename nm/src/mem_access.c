@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 
 #include <nm.h>
+#include <stdlib.h>
 
 /*
 ** size is the size of the area in which the pointer can move,
@@ -19,7 +20,7 @@
 ** being processed, and delta is checked to be non overflowing
 */
 
-inline void	*mem_access(const uint64_t size, void *ptr,
+inline void	*mem_access(uint64_t size, void *ptr,
 						const uint64_t delta, t_nm_env *env)
 {
 	uint64_t	pos;

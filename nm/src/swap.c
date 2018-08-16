@@ -12,18 +12,18 @@
 
 #include <stdint.h>
 
-inline uint16_t	swap16(uint16_t v)
+uint16_t	swap16(uint16_t v)
 {
 	return (((v & 0xFFull) << 8) | ((v & 0xFF00ull) >> 8));
 }
 
-inline uint32_t	swap32(uint32_t v)
+uint32_t	swap32(uint32_t v)
 {
 	return (((v & 0xFF) << 24) | ((v & 0xFF00) << 8)
 		| ((v & 0xFF0000) >> 8) | ((v & 0xFF000000) >> 24));
 }
 
-inline uint64_t	swap64(uint64_t v)
+uint64_t	swap64(uint64_t v)
 {
 	return (((v & 0xFFull) << 56) | ((v & 0xFF00ull) << 40)
 		| ((v & 0xFF0000ull) << 24) | ((v & 0xFF000000ull) << 8)
@@ -32,7 +32,7 @@ inline uint64_t	swap64(uint64_t v)
 		| ((v & 0xFF00000000000000ull) >> 56));
 }
 
-inline void		*swap(void *mem, uint64_t size, uint64_t block)
+void		*swap(void *mem, uint64_t size, uint64_t block)
 {
 	uint8_t		t;
 	uint64_t	i;

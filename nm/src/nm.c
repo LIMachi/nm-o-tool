@@ -20,21 +20,23 @@
 
 int	nm_object_handler(t_nm_env *env)
 {
-
+	(void)env;
+	return (0);
 }
 
 int	nm_execute_handler(t_nm_env *env)
 {
-
+	(void)env;
+	return (0);
 }
 
 int	nm_magic_handler(uint32_t magic, t_nm_env *env)
 {
 	env->revert_endian = magic == MH_CIGAM || magic == MH_CIGAM_64;
 	env->x64 = magic == MH_CIGAM_64 || magic == MH_MAGIC_64;
-	if (env->file_stats.st_size < sizeof(mach_header_64))
+	if ((size_t)env->file_stats.st_size < sizeof(struct mach_header_64))
 		return (EXIT_FAILURE);
-	env->header = *(mach_header_64*)env->file;
+	env->header = *(struct mach_header_64*)env->file;
 	if (!env->x64)
 		env->header.reserved = 0;
 	if (!(magic == MH_MAGIC || magic == MH_CIGAM || magic == MH_MAGIC_64
@@ -51,7 +53,7 @@ int	nm(t_nm_env *env)
 {
 	uint32_t	magic;
 
-	if (env->file_stats.st_size < sizeof(uint32_t))
+	if ((size_t)env->file_stats.st_size < sizeof(uint32_t))
 		return (EXIT_FAILURE);
 	magic = *(uint32_t*)env->file;
 	if ((env->revert_endian = (magic == FAT_CIGAM || magic == FAT_CIGAM_64)))

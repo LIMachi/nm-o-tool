@@ -17,7 +17,9 @@
 
 #include <sys/stat.h>
 
-#include <mach-o/loadder.h>
+#include <mach-o/loader.h>
+#include <mach-o/fat.h>
+#include <mach-o/nlist.h>
 
 /*
 ** fstat, struct stat
@@ -107,12 +109,12 @@ int				nm(t_nm_env *env);
 
 inline uint64_t	mem_validate_null_string(char *str, t_nm_env *env);
 
-inline void		*mem_access(const uint64_t size, void *ptr,
+inline void		*mem_access(uint64_t size, void *ptr,
 							const uint64_t delta, t_nm_env *env);
 
-inline uint16_t	swap16(uint16_t v);
-inline uint32_t	swap32(uint32_t v);
-inline uint64_t	swap64(uint64_t v);
-inline void		*swap(void *mem, uint64_t size, uint64_t block);
+uint16_t		swap16(uint16_t v);
+uint32_t		swap32(uint32_t v);
+uint64_t		swap64(uint64_t v);
+void			*swap(void *mem, uint64_t size, uint64_t block);
 
 #endif
