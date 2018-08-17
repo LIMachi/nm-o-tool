@@ -6,7 +6,7 @@
 /*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/08/11 11:18:50 by hmartzol          #+#    #+#             */
-/*   Updated: 2018/08/15 13:51:37 by hmartzol         ###   ########.fr       */
+/*   Updated: 2018/08/17 15:55:39 by hmartzol         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,12 +38,6 @@
 /*
 ** close
 */
-
-static inline int	sif_error(char *form, char *comp)
-{
-	ft_dprintf(2, form, comp);
-	return (EXIT_FAILURE);
-}
 
 /*
 ** options: (mac)
@@ -98,6 +92,13 @@ static inline int	sif_error(char *form, char *comp)
 ** --target: similar to -arch
 */
 
+static inline int	sif_error(char *form, char *comp)
+{
+	ft_dprintf(2, form, comp);
+	return (EXIT_FAILURE);
+}
+
+
 static inline int	sif_read_opts(int argc, char **argv, t_nm_env *env,
 									t_getopt_env *ge)
 {
@@ -136,6 +137,7 @@ static inline int	sif_load_file(char *path, t_nm_env *env)
 		return (sif_error("can't read '%s'\n", path));
 	if (close(fd) == -1)
 		return (sif_error("can't close file '%s'\n", path));
+	env->file_path = path;
 	return (EXIT_SUCCESS);
 }
 
@@ -150,20 +152,20 @@ int					main(int argc, char **argv)
 	{
 		if (sif_load_file("./a.out", &env) == EXIT_FAILURE)
 			return (EXIT_FAILURE);
-		if (nm("./a.out", &env) == EXIT_FAILURE)
+		if (nm(&env) == EXIT_FAILURE)
 			return (EXIT_FAILURE);
 		if (munmap(env.file, env.file_stats.st_size) == -1)
-			return (sif_error("can't unload file '%s'\n", ".a.out"));
+			return (sif_error("can't unload file '%s'\n", env.file_path));
 	}
 	else
 		while (++ge.optind < argc)
 		{
 			if (sif_load_file(argv[ge.optind], &env) == EXIT_FAILURE)
 				return (EXIT_FAILURE);
-			if (nm(argv[ge.optind], &env) == EXIT_FAILURE)
+			if (nm(&env) == EXIT_FAILURE)
 				return (EXIT_FAILURE);
 			if (munmap(env.file, env.file_stats.st_size) == -1)
-				return (sif_error("can't unload file '%s'\n", argv[ge.optind]));
+				return (sif_error("can't unload file '%s'\n", env.file_path));
 		}
 	return (EXIT_SUCCESS);
 }

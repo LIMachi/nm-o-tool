@@ -6,7 +6,7 @@
 /*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/08/11 11:28:22 by hmartzol          #+#    #+#             */
-/*   Updated: 2018/08/15 13:53:17 by hmartzol         ###   ########.fr       */
+/*   Updated: 2018/08/16 11:04:00 by hmartzol         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,8 @@
 #include <stdint.h>
 
 #include <sys/stat.h>
+
+#include <mach-o/loadder.h>
 
 /*
 ** fstat, struct stat
@@ -84,18 +86,33 @@ typedef enum	e_nm_flags
 
 typedef struct	s_nm_env
 {
-	t_nm_flags	flags;
-	struct stat	file_stats;
-	uint8_t		*file;
-	uint64_t	file_start;
-	uint64_t	file_end;
-	uint64_t	bss_sect;
-	uint64_t	text_sect;
-	uint64_t	data_sect;
+	t_nm_flags				flags;
+	char					*file_path;
+	struct stat				file_stats;
+	struct mach_header_64	header;
+	int						revert_endian;
+	int						x64;
+	uint8_t					*file;
+	uint64_t				file_start;
+	uint64_t				file_end;
+	uint64_t				bss_sect;
+	uint64_t				text_sect;
+	uint64_t				data_sect;
 }				t_nm_env;
 
-char	nm_type_char(uint8_t n_type, uint64_t value, uint64_t nsect,
-					t_nm_env *env);
+char			nm_type_char(uint8_t n_type, uint64_t value, uint64_t nsect,
+							t_nm_env *env);
 
-int		nm(char *path, t_nm_env *env);
+int				nm(t_nm_env *env);
+
+inline uint64_t	mem_validate_null_string(char *str, t_nm_env *env);
+
+inline void		*mem_access(const uint64_t size, void *ptr,
+							const uint64_t delta, t_nm_env *env);
+
+inline uint16_t	swap16(uint16_t v);
+inline uint32_t	swap32(uint32_t v);
+inline uint64_t	swap64(uint64_t v);
+inline void		*swap(void *mem, uint64_t size, uint64_t block);
+
 #endif
