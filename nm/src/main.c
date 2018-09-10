@@ -6,7 +6,7 @@
 /*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/08/11 11:18:50 by hmartzol          #+#    #+#             */
-/*   Updated: 2018/08/17 15:55:39 by hmartzol         ###   ########.fr       */
+/*   Updated: 2018/08/21 22:29:18 by lee              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,6 +98,11 @@ static inline int	sif_error(char *form, char *comp)
 	return (EXIT_FAILURE);
 }
 
+static inline int	sif_help(void)
+{
+	ft_printf("*placeholder*\n");
+	return (EXIT_SUCCESS);
+}
 
 static inline int	sif_read_opts(int argc, char **argv, t_nm_env *env,
 									t_getopt_env *ge)
@@ -108,7 +113,7 @@ static inline int	sif_read_opts(int argc, char **argv, t_nm_env *env,
 	{'n', "numeric-sort", NO, NULL}, {'p', "no-sort", NO, NULL},
 	{'r', "reverse-sort", NO, NULL}, {'u', "undefined-only", NO, NULL},
 	{'U', "defined-omly", NO, NULL}, {'j', "names-only", NO, NULL},
-	{'s', "section", REQUIRED, NULL}, {1, "arch", REQUIRED, NULL},
+	{'s', "section", REQUIRED, NULL}, {2, "arch", REQUIRED, NULL},
 	{'f', "format", REQUIRED, NULL}, {'A', "print-file-path", NO, NULL},
 	{'C', "demangle", NO, NULL}, {'h', "help", NO, NULL},
 	{'v', "version", NO, NULL}};
@@ -117,7 +122,8 @@ static inline int	sif_read_opts(int argc, char **argv, t_nm_env *env,
 	(void)env;
 	while((r = ft_getopt(argc, argv, ge)) > -1 && r != '?' && r != ':')
 	{
-		NULL;
+		if (r == 'h')
+			return (sif_help());
 	}
 	if (r == '?' || r == ':')
 		return (EXIT_FAILURE);

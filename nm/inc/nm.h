@@ -6,7 +6,7 @@
 /*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/08/11 11:28:22 by hmartzol          #+#    #+#             */
-/*   Updated: 2018/08/16 11:04:00 by hmartzol         ###   ########.fr       */
+/*   Updated: 2018/08/23 19:01:09 by lee              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,13 +17,13 @@
 
 #include <sys/stat.h>
 
-#include <mach-o/loader.h>
-#include <mach-o/fat.h>
-#include <mach-o/nlist.h>
-
 /*
 ** fstat, struct stat
 */
+
+#include <mach-o/loader.h>
+#include <mach-o/fat.h>
+#include <mach-o/nlist.h>
 
 /*
 ** e_nm_flags:
