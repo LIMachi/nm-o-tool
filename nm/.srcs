@@ -1,0 +1,7 @@
+SRCS = src/swap.c \
+       src/validator_macho.c \
+       src/mem_validate_null_string.c \
+       src/nm.c \
+       src/nm_type_char.c \
+       src/main.c \
+       src/mem_access.c

@@ -1,0 +1,1 @@
+/usr/bin/cc -g   CMakeFiles/ft_nm.dir/src/swap.c.o CMakeFiles/ft_nm.dir/src/validator_macho.c.o CMakeFiles/ft_nm.dir/src/mem_validate_null_string.c.o CMakeFiles/ft_nm.dir/src/nm.c.o CMakeFiles/ft_nm.dir/src/nm_type_char.c.o CMakeFiles/ft_nm.dir/src/main.c.o CMakeFiles/ft_nm.dir/src/mem_access.c.o  -o ft_nm 

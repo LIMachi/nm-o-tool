@@ -1,0 +1,1 @@
+/usr/bin/cc -g   CMakeFiles/validator.dir/src/validator.c.o CMakeFiles/validator.dir/src/load_file.c.o CMakeFiles/validator.dir/src/archive.c.o CMakeFiles/validator.dir/src/fat.c.o CMakeFiles/validator.dir/src/main.c.o CMakeFiles/validator.dir/src/load_commands.c.o CMakeFiles/validator.dir/src/elf/header.c.o CMakeFiles/validator.dir/src/macho.c.o  -o validator 

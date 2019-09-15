@@ -1,0 +1,8 @@
+/home/hugo/Desktop/nm-o-tool/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/hugo/Desktop/nm-o-tool/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/hugo/Desktop/nm-o-tool/cmake-build-debug/nm/CMakeFiles/rebuild_cache.dir
+/home/hugo/Desktop/nm-o-tool/cmake-build-debug/nm/CMakeFiles/ft_nm.dir
+/home/hugo/Desktop/nm-o-tool/cmake-build-debug/nm/CMakeFiles/edit_cache.dir
+/home/hugo/Desktop/nm-o-tool/cmake-build-debug/validator/CMakeFiles/rebuild_cache.dir
+/home/hugo/Desktop/nm-o-tool/cmake-build-debug/validator/CMakeFiles/validator.dir
+/home/hugo/Desktop/nm-o-tool/cmake-build-debug/validator/CMakeFiles/edit_cache.dir

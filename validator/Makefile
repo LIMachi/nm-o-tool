@@ -1,3 +1,3 @@
 include ../Makefiles/default_var.mk
-NAME := ft_nm
+NAME := validator
 include ../Makefiles/bin.mk
