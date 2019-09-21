@@ -1,5 +1,7 @@
 #include <elf_validator.h>
 
+/*
+
 t_elf_error	elf_obj_err(t_objfile *file, t_elf_error error)
 {
 	return (file->err = error);
@@ -36,7 +38,7 @@ t_elf_error	reader(const char *path, t_objfile *obj)
 
 	if (path == NULL || obj == NULL)
 		return (EE_NULL_PTR);
-	*obj = (t_objfile){-1, 0, MAP_FAILED, MAP_FAILED, {.head_size = 0}, EE_OK};
+	*obj = (t_objfile){.fd = -1, .file = {MAP_FAILED}, .map = MAP_FAILED};
 	if ((fd0 = open("/dev/zero", O_RDWR)) == -1)
 		return (clean_objfile(obj, EE_COULD_NOT_OPEN_FILE));
 	if ((obj->fd = open(path, O_RDONLY)) == -1)
@@ -59,12 +61,15 @@ t_elf_error	reader(const char *path, t_objfile *obj)
 	return (EE_OK);
 }
 
+*/
+
 /*
 ** validate the header first part of the header and determine if an endian swap
 ** will be needed for further readings (the first part of the header is size and
 ** endianese independent)
 */
 
+/*
 t_elf_error	valid_header(t_objfile *obj)
 {
 	int	endian_test;
@@ -274,7 +279,9 @@ t_elf_error	valid_elf_headers(t_objfile *obj)
 	(void)obj;
 	return (EE_OK);
 }
+*/
 
+/*
 int			main()
 {
 	t_objfile	file;
@@ -290,3 +297,4 @@ int			main()
 	clean_objfile(&file, EE_OK);
 	return (0);
 }
+*/

@@ -13,6 +13,8 @@
 #ifndef VALIDATOR_H
 # define VALIDATOR_H
 
+/*
+
 typedef struct	s_mem_area
 {
 	void		*start;
@@ -103,5 +105,7 @@ typedef struct	s_macho_info
 	t_mem_area				commands_area;
 	t_mem_area				data_area;
 }				t_macho_info;
+
+*/
 
 #endif
