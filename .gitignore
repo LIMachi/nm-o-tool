@@ -56,3 +56,5 @@ ft_otool
 
 .idea
 cmake-build-debug
+.DS_Store
+.makefile_files

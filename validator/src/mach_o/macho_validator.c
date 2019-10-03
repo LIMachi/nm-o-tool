@@ -3,23 +3,34 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/*
+** memcmp
+*/
+
+#include <string.h>
+
 t_validator_error	obj_err(t_macho_file *file, t_validator_error error)
 {
+	if (error != VE_OK)
+		printf("caught error, please set a breakpoint on 'obj_err'\n");
 	return (file->err = error);
 }
 
 t_validator_error	clean_objfile(t_macho_file *file, t_validator_error error)
 {
 	obj_err(file, error);
+	if (file->fd != -1 && file->file_map != MAP_FAILED)
+	{
+		if (/*debug*/1 && file->file.data != MAP_FAILED)
+			for (size_t it = 0; it < file->size && it < 4096; ++it)
+				it % 16 == 0 ? printf("%08.8llX ", (unsigned long long)it) : 0, printf("\x1b[38;5;%um%02.2X\x1b[0m%c", 29 + file->file_map[it] % 8, file->file.data[it], it % 16 == 15 ? '\n' : ' ');
+		munmap(file->file_map, file->size);
+		file->file_map = MAP_FAILED;
+	}
 	if (file->fd != -1 && file->file.data != MAP_FAILED)
 	{
 		munmap(file->file.data, file->size);
 		file->file.data = MAP_FAILED;
-	}
-	if (file->fd != -1 && file->map != MAP_FAILED)
-	{
-		munmap(file->map, file->size);
-		file->map = MAP_FAILED;
 	}
 	if (file->fd != -1)
 	{
@@ -35,13 +46,10 @@ t_validator_error	reader(const char *path, t_macho_file *obj)
 {
 	struct stat	sb;
 	size_t		it;
-	// int			fd0;
 
 	if (path == NULL || obj == NULL)
 		return (VE_NULL_PTR);
-	*obj = (t_macho_file){.fd = -1, .file = {MAP_FAILED}, .map = MAP_FAILED};
-	// if ((fd0 = open("/dev/zero", O_RDWR)) == -1)
-	// 	return (clean_objfile(obj, VE_COULD_NOT_OPEN_FILE));
+	*obj = (t_macho_file){.fd = -1, .file = {MAP_FAILED}, .file_map = MAP_FAILED};
 	if ((obj->fd = open(path, O_RDONLY)) == -1)
 		return (clean_objfile(obj, VE_COULD_NOT_OPEN_FILE));
 	if (fstat(obj->fd, &sb))
@@ -50,12 +58,12 @@ t_validator_error	reader(const char *path, t_macho_file *obj)
 	if ((obj->file.data = mmap(NULL, obj->size, PROT_READ, MAP_PRIVATE, obj->fd,
 								0)) == MAP_FAILED)
 		return (clean_objfile(obj, VE_MAPPING_ERROR));
-	if ((obj->map = mmap(NULL, obj->size, PROT_WRITE | PROT_READ,
+	if ((obj->file_map = mmap(NULL, obj->size, PROT_WRITE | PROT_READ,
 			MAP_PRIVATE | MAP_ANON, -1, 0)) == MAP_FAILED)
 		return (clean_objfile(obj, VE_MAPPING_ERROR));
 	it = (size_t)-1;
 	while (++it < obj->size)
-		obj->map[it] = MM_PAD;
+		obj->file_map[it] = MM_PAD;
 	return (VE_OK);
 }
 
@@ -107,8 +115,8 @@ t_validator_error	read_in_object(t_macho_file *obj, t_cursor rc,
 	while (++it < rc.nb_blocs && (sw = (size_t)-1))
 	{
 		while (++sw < align)
-			if (obj->map[rc.index + it * align + sw] != rc.expected_mapping)
-				return (VE_INVALID_MAPING);
+			if (obj->file_map[rc.index + it * align + sw] != rc.expected_mapping)
+				return (obj_err(obj, VE_INVALID_MAPING));
 		sw = (size_t)-1;
 		while (++sw < align)
 			if (should_swap && obj->endian && sw < rc.block_size)
@@ -140,10 +148,10 @@ t_validator_error	claim_map(t_macho_file *obj, t_cursor rc, uint8_t claim)
 	it = (size_t)-1;
 	while (++it < rc.nb_blocs && (sw = (size_t)-1))
 		while (++sw < rc.block_size)
-			if (obj->map[rc.index + align * it + sw] != MM_PAD)
+			if (obj->file_map[rc.index + align * it + sw] != MM_PAD)
 				return (obj_err(obj, VE_INVALID_CLAIM));
 			else
-				obj->map[rc.index + align * it + sw] = claim;
+				obj->file_map[rc.index + align * it + sw] = claim;
 	return (VE_OK);
 }
 
@@ -164,7 +172,7 @@ t_validator_error	unclaim_map(t_macho_file *obj, t_cursor rc)
 	it = (size_t)-1;
 	while (++it < rc.nb_blocs && (sw = (size_t)-1))
 		while (++sw < rc.block_size)
-				obj->map[rc.index + align * it + sw] = MM_PAD;
+				obj->file_map[rc.index + align * it + sw] = MM_PAD;
 	return (VE_OK);
 }
 
@@ -205,8 +213,8 @@ t_validator_error	validate_head_32(t_macho_file *obj)
 		sizeof(cpu_type_t), 1, MM_HEADER}, &obj->head.cputype, 1)
 		|| read_in_object(obj, (t_cursor){__offsetof(t_moh32, cpusubtype),
 		1, sizeof(cpu_subtype_t), 1, MM_HEADER}, &obj->head.cpusubtype, 1)
-		|| read_in_object(obj, (t_cursor){__offsetof(t_moh32, filetype), 1,
-		sizeof(uint32_t), 4, MM_HEADER}, &obj->head.filetype, 1))
+		|| read_in_object(obj, (t_cursor){__offsetof(t_moh32, filetype), 4,
+		sizeof(uint32_t), 1, MM_HEADER}, &obj->head.filetype, 1))
 		return (obj->err);
 	return (validate_head(obj));
 }
@@ -219,8 +227,8 @@ t_validator_error	validate_head_64(t_macho_file *obj)
 			sizeof(cpu_type_t), 1, MM_HEADER}, &obj->head.cputype, 1)
 			|| read_in_object(obj, (t_cursor){__offsetof(t_moh64, cpusubtype),
 			1, sizeof(cpu_subtype_t), 1, MM_HEADER}, &obj->head.cpusubtype, 1)
-			|| read_in_object(obj, (t_cursor){__offsetof(t_moh64, filetype), 1,
-			sizeof(uint32_t), 5, MM_HEADER}, &obj->head.filetype, 1))
+			|| read_in_object(obj, (t_cursor){__offsetof(t_moh64, filetype), 5,
+			sizeof(uint32_t), 1, MM_HEADER}, &obj->head.filetype, 1))
 		return (obj->err);
 	return (validate_head(obj));
 }
@@ -253,18 +261,166 @@ t_validator_error	validate_magic(t_macho_file *obj)
 	return (VE_OK);
 }
 
+/*
+** default command validator, always return valid on any command
+*/
+
+t_validator_error	vlc_noop(t_load_command_descriptor *lcd, t_load_command_union lcu, t_macho_file *file)
+{
+	(void)lcd;
+	(void)file;
+	(void)lcu;
+	return (VE_OK);
+}
+
+t_validator_error	vlc_segment_64(t_load_command_descriptor *lcd, t_load_command_union lcu, t_macho_file *file)
+{
+	size_t	es;
+
+	es = lcd->minimum_size + lcu.segment_64.nsects * sizeof(struct section_64);
+	if (es != (size_t)lcu.lc.cmdsize)
+		return (obj_err(file, VE_INVALID_SEGMENT_COUNT));
+	printf("valid segment (64)\n");
+	return (VE_OK);
+}
+
+t_validator_error	vlc_segment_32(t_load_command_descriptor *lcd, t_load_command_union lcu, t_macho_file *file)
+{
+	size_t	es;
+
+	es = lcd->minimum_size + lcu.segment_32.nsects * sizeof(struct section);
+	if (es != (size_t)lcu.lc.cmdsize)
+		return (obj_err(file, VE_INVALID_SEGMENT_COUNT));
+	printf("valid segment (32)\n");
+	return (VE_OK);
+}
+
+static const t_load_command_descriptor	g_lcd[46] = {
+	{LC_SEGMENT, sizeof(struct segment_command), 0, 11, vlc_segment_32, {{4, 1}, {4, 1}, {16, 0}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {sizeof(vm_prot_t), 1}, {sizeof(vm_prot_t), 1}, {4, 1}, {4, 1}}},
+	{LC_SEGMENT_64, sizeof(struct segment_command_64), 0, 11, vlc_segment_64, {{4, 1}, {4, 1}, {16, 0}, {8, 1}, {8, 1}, {8, 1}, {8, 1}, {sizeof(vm_prot_t), 1}, {sizeof(vm_prot_t), 1}, {4, 1}, {4, 1}}},
+	{LC_IDFVMLIB, sizeof(struct fvmlib_command), 1, 5, vlc_noop, {{4, 1}, {4, 1}, {sizeof(union lc_str), 1}, {4, 1}, {4, 1}}},
+	{LC_LOADFVMLIB, sizeof(struct fvmlib_command), 1, 5, vlc_noop, {{4, 1}, {4, 1}, {sizeof(union lc_str), 1}, {4, 1}, {4, 1}}},
+	{LC_ID_DYLIB, sizeof(struct dylib_command), 0, 6, vlc_noop, {{4, 1}, {4, 1}, {sizeof(union lc_str), 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_LOAD_DYLIB, sizeof(struct dylib_command), 0, 6, vlc_noop, {{4, 1}, {4, 1}, {sizeof(union lc_str), 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_LOAD_WEAK_DYLIB, sizeof(struct dylib_command), 0, 6, vlc_noop, {{4, 1}, {4, 1}, {sizeof(union lc_str), 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_REEXPORT_DYLIB, sizeof(struct dylib_command), 0, 6, vlc_noop, {{4, 1}, {4, 1}, {sizeof(union lc_str), 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_SUB_FRAMEWORK, sizeof(struct sub_framework_command), 0, 3, vlc_noop, {{4, 1}, {4, 1}, {sizeof(union lc_str), 1}}},
+	{LC_SUB_CLIENT, sizeof(struct sub_client_command), 0, 3, vlc_noop, {{4, 1}, {4, 1}, {sizeof(union lc_str), 1}}},
+	{LC_SUB_UMBRELLA, sizeof(struct sub_umbrella_command), 0, 3, vlc_noop, {{4, 1}, {4, 1}, {sizeof(union lc_str), 1}}},
+	{LC_SUB_LIBRARY, sizeof(struct sub_library_command), 0, 3, vlc_noop, {{4, 1}, {4, 1}, {sizeof(union lc_str), 1}}},
+	{LC_PREBOUND_DYLIB, sizeof(struct prebound_dylib_command), 0, 5, vlc_noop, {{4, 1}, {4, 1}, {sizeof(union lc_str), 1}, {4, 1}, {sizeof(union lc_str), 1}}},
+	{LC_ID_DYLINKER, sizeof(struct dylinker_command), 0, 3, vlc_noop, {{4, 1}, {4, 1}, {sizeof(union lc_str), 1}}},
+	{LC_LOAD_DYLINKER, sizeof(struct dylinker_command), 0, 3, vlc_noop, {{4, 1}, {4, 1}, {sizeof(union lc_str), 1}}},
+	{LC_DYLD_ENVIRONMENT, sizeof(struct dylinker_command), 0, 3, vlc_noop, {{4, 1}, {4, 1}, {sizeof(union lc_str), 1}}},
+	{LC_THREAD, sizeof(struct thread_command), 0, 2, vlc_noop, {{4, 1}, {4, 1}}},
+	{LC_UNIXTHREAD, sizeof(struct thread_command), 0, 2, vlc_noop, {{4, 1}, {4, 1}}},
+	{LC_ROUTINES, sizeof(struct routines_command), 1, 10, vlc_noop, {{4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_ROUTINES_64, sizeof(struct routines_command_64), 1, 10, vlc_noop, {{4, 1}, {4, 1}, {8, 1}, {8, 1}, {8, 1}, {8, 1}, {8, 1}, {8, 1}, {8, 1}, {8, 1}}},
+	{LC_SYMTAB, sizeof(struct symtab_command), 1, 6, vlc_noop, {{4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_DYSYMTAB, sizeof(struct dysymtab_command), 1, 20, vlc_noop, {{4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_TWOLEVEL_HINTS, sizeof(struct twolevel_hints_command), 1, 4, vlc_noop, {{4, 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_PREBIND_CKSUM, sizeof(struct prebind_cksum_command), 1, 3, vlc_noop, {{4, 1}, {4, 1}, {4, 1}}},
+	{LC_UUID, sizeof(struct uuid_command), 1, 3, vlc_noop, {{4, 1}, {4, 1}, {16, 0}}},
+	{LC_RPATH, sizeof(struct rpath_command), 1, 3, vlc_noop, {{4, 1}, {4, 1}, {sizeof(union lc_str), 1}}},
+	{LC_CODE_SIGNATURE, sizeof(struct linkedit_data_command), 1, 4, vlc_noop, {{4, 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_SEGMENT_SPLIT_INFO, sizeof(struct linkedit_data_command), 1, 4, vlc_noop, {{4, 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_FUNCTION_STARTS, sizeof(struct linkedit_data_command), 1, 4, vlc_noop, {{4, 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_DATA_IN_CODE, sizeof(struct linkedit_data_command), 1, 4, vlc_noop, {{4, 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_DYLIB_CODE_SIGN_DRS, sizeof(struct linkedit_data_command), 1, 4, vlc_noop, {{4, 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_LINKER_OPTIMIZATION_HINT, sizeof(struct linkedit_data_command), 1, 4, vlc_noop, {{4, 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_ENCRYPTION_INFO, sizeof(struct encryption_info_command), 1, 5, vlc_noop, {{4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_ENCRYPTION_INFO_64, sizeof(struct encryption_info_command_64), 1, 6, vlc_noop, {{4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 0}}},
+	{LC_VERSION_MIN_MACOSX, sizeof(struct version_min_command), 1, 4, vlc_noop, {{4, 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_VERSION_MIN_IPHONEOS, sizeof(struct version_min_command), 1, 4, vlc_noop, {{4, 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_VERSION_MIN_WATCHOS, sizeof(struct version_min_command), 1, 4, vlc_noop, {{4, 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_VERSION_MIN_TVOS, sizeof(struct version_min_command), 1, 4, vlc_noop, {{4, 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_DYLD_INFO, sizeof(struct dyld_info_command), 1, 12, vlc_noop, {{4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1},{4, 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_DYLD_INFO_ONLY, sizeof(struct dyld_info_command), 1, 12, vlc_noop, {{4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {4, 1},{4, 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_LINKER_OPTION, sizeof(struct linker_option_command), 1, 3, vlc_noop, {{4, 1}, {4, 1}, {4, 1}}},
+	{LC_SYMSEG, sizeof(struct symseg_command), 1, 4, vlc_noop, {{4, 1}, {4, 1}, {4, 1}, {4, 1}}},
+	{LC_IDENT, sizeof(struct ident_command), 0, 2, vlc_noop, {{4, 1}, {4, 1}}},
+	{LC_FVMFILE, sizeof(struct ident_command), 0, 4, vlc_noop, {{4, 1}, {4, 1}, {sizeof(union lc_str), 1}, {4, 1}}},
+	{LC_MAIN, sizeof(struct entry_point_command), 1, 4, vlc_noop, {{4, 1}, {4, 1}, {8, 1}, {8, 1}}},
+	{LC_SOURCE_VERSION, sizeof(struct source_version_command), 1, 3, vlc_noop, {{4, 1}, {4, 1}, {8, 1}}}
+};
+
+t_validator_error	test_load_command(t_macho_file *file, size_t head,
+										t_load_command_descriptor lcd)
+{
+	t_cursor				rc;
+	t_load_command_union	lcu;
+	size_t					it;
+	size_t					d;
+
+	lcu.data[0] = 0;
+	rc = (t_cursor){head, 2, 4, 1, MM_CMD};
+	if (read_in_object(file, rc, lcu.data, 1) != VE_OK)
+		return (file->err);
+	if (lcu.lc.cmd != lcd.id)
+		return (VE_INVALID_TYPE);
+	if (lcd.is_exact_size && lcd.minimum_size != lcu.lc.cmdsize)
+		return (VE_INVALID_COMMAND_SIZE);
+	it = (size_t)1;
+	d = 8;
+	rc = (t_cursor){head + 8, 1, 4, 1, MM_CMD};
+	while (++it < lcd.nb_elems)
+	{
+		rc.block_size = lcd.elems[it].size;
+		if (read_in_object(file, rc, &lcu.data[d], lcd.elems[it].swap) != VE_OK)
+			return (file->err);
+		d += rc.block_size;
+		rc.index += rc.block_size;
+	}
+	return (lcd.vlc(&lcd, lcu, file));
+}
+
+t_validator_error	validate_command(t_macho_file *file, uint32_t cmd, size_t *head)
+{
+	struct load_command	lc;
+	size_t				next;
+	size_t				it;
+
+	cmd += MM_CMD + 1;
+	if (cmd < MM_CMD)
+		printf("Warning: too many commands id, less secure mapping detection\n");
+	if (read_in_object(file, (t_cursor){*head, sizeof(uint32_t), 2, 1, MM_CMD},
+			&lc, 1) != VE_OK)
+		return (file->err);
+	next = *head + lc.cmdsize;
+	if (lc.cmdsize > 4096 || lc.cmdsize >= file->size
+			|| next < *head || next < lc.cmdsize)
+		return (obj_err(file, VE_INVALID_COMMAND_SIZE));
+	printf("reading command of type 0x%X and size %d as %d at %zu\n", lc.cmd, lc.cmdsize, cmd, *head);
+	it = (size_t)-1;
+	while (++it < 46)
+		if (test_load_command(file, *head, g_lcd[it]) == VE_OK)
+			break ;
+	if (it == 46)
+		return (file->err);
+	*head = next;
+	return (VE_OK);
+}
+
 int		main(int argc, char *argv[])
 {
 	t_macho_file		file;
-	t_validator_error	err;
+	uint32_t			cmd;
+	size_t				head;
 
 	if (argc < 2)
 		return (0);
-	if ((err = reader(argv[1], &file)) != VE_OK)
-		return (err);
+	if ((file.err = reader(argv[1], &file)) != VE_OK)
+		return (file.err);
 	if ((validate_magic(&file) != VE_OK)
 			|| (file.format == 64 ? validate_head_64(&file)
 								: validate_head_32(&file)))
-		return (err);
+		return (file.err);
+	head = file.format == 64 ? sizeof(t_moh64) : sizeof(t_moh32);
+	if (claim_map(&file, (t_cursor){head, 1, file.head.sizeofcmds, 1, MM_PAD}, MM_CMD) != VE_OK)
+		return (clean_objfile(&file, file.err));
+	cmd = (uint32_t)-1;
+	while (++cmd < file.head.ncmds)
+		if (validate_command(&file, cmd, &head) != VE_OK)
+			break ;
 	return (clean_objfile(&file, file.err));
 }

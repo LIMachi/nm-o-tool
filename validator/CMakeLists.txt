@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
 project(validator)
-include_directories(inc )
-add_executable(validator src/elf/header.c inc/mach_o_validator.h src/mach_o/macho_validator.c)
+set(CMAKE_CXX_STANDARD 14)
+include_directories(inc /Users/hmartzol/.brew/include)
+add_library(validator   src/elf/header.c src/mach_o/macho_validator.c)
