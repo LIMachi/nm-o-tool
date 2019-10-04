@@ -99,6 +99,7 @@ t_validator_error	valid_cursor(t_macho_file *obj, t_cursor rc, size_t *align)
 ** then retrieve some memory
 ** should swap is a flag to tell if the endian swap should be used
 ** buffer should be a memory big enough to contain the read data
+** buffer can be NULL to only test the area
 ** return VE_OK on success, another error on faillure (also stored in obj)
 */
 
@@ -117,6 +118,8 @@ t_validator_error	read_in_object(t_macho_file *obj, t_cursor rc,
 		while (++sw < align)
 			if (obj->file_map[rc.index + it * align + sw] != rc.expected_mapping)
 				return (obj_err(obj, VE_INVALID_MAPING));
+		if (buffer == NULL)
+			continue ;
 		sw = (size_t)-1;
 		while (++sw < align)
 			if (should_swap && obj->endian && sw < rc.block_size)
@@ -127,6 +130,13 @@ t_validator_error	read_in_object(t_macho_file *obj, t_cursor rc,
 					= obj->file.data[rc.index + it * align + sw];
 	}
 	return (VE_OK);
+}
+
+t_struct_descriptor g_section_structure = {sizeof(struct section), 2, {{16, 2, 1, 0}, {4, 9, 4, 1}}};
+
+t_validator_error	read_struct_in_object(t_macho_file *obj, void *buffer, t_struct_cursor sc, t_struct_descriptor sd)
+{
+
 }
 
 /*
@@ -273,30 +283,41 @@ t_validator_error	vlc_noop(t_load_command_descriptor *lcd, t_load_command_union 
 	return (VE_OK);
 }
 
-t_validator_error	vlc_segment_64(t_load_command_descriptor *lcd, t_load_command_union lcu, t_macho_file *file)
+t_validator_error	vlc_sections_64(t_load_command_descriptor *lcd, t_load_command_union lcu, t_macho_file *file)
 {
-	size_t	es;
+	size_t				it;
+	struct section_64	sec;
 
-	es = lcd->minimum_size + lcu.segment_64.nsects * sizeof(struct section_64);
-	if (es != (size_t)lcu.lc.cmdsize)
-		return (obj_err(file, VE_INVALID_SEGMENT_COUNT));
-	printf("valid segment (64)\n");
+	(void)lcd;
+	(void)file;
+	it = (size_t)-1;
+	while (++it < lcu.segment_64.nsects)
+	{
+
+	}
 	return (VE_OK);
 }
 
-t_validator_error	vlc_segment_32(t_load_command_descriptor *lcd, t_load_command_union lcu, t_macho_file *file)
+t_validator_error	vlc_segment_64(t_load_command_descriptor *lcd, t_load_command_union lcu, t_macho_file *file)
 {
-	size_t	es;
+	size_t						es;
+	struct segment_command_64	seg;
 
-	es = lcd->minimum_size + lcu.segment_32.nsects * sizeof(struct section);
+	seg = lcu.segment_64;
+	es = lcd->minimum_size + seg.nsects * sizeof(struct section_64);
 	if (es != (size_t)lcu.lc.cmdsize)
 		return (obj_err(file, VE_INVALID_SEGMENT_COUNT));
-	printf("valid segment (32)\n");
-	return (VE_OK);
+	printf("valid segment (64): '%.16s'\n", lcu.segment_64.segname);
+	//vm
+	if (seg.fileoff >= file->size)
+		return (obj_err(file, VE_INVALID_LOAD_COMMAND_IN_FILE_ADDR));
+	if (seg.fileoff + seg.filesize > file->size)
+		return (obj_err(file, VE_INVALID_LOAD_COMMAND_FILE_BLOCK_SIZE));
+	return (vlc_sections_64(lcd, lcu, file));
 }
 
 static const t_load_command_descriptor	g_lcd[46] = {
-	{LC_SEGMENT, sizeof(struct segment_command), 0, 11, vlc_segment_32, {{4, 1}, {4, 1}, {16, 0}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {sizeof(vm_prot_t), 1}, {sizeof(vm_prot_t), 1}, {4, 1}, {4, 1}}},
+	{LC_SEGMENT, sizeof(struct segment_command), 0, 11, vlc_noop, {{4, 1}, {4, 1}, {16, 0}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {sizeof(vm_prot_t), 1}, {sizeof(vm_prot_t), 1}, {4, 1}, {4, 1}}},
 	{LC_SEGMENT_64, sizeof(struct segment_command_64), 0, 11, vlc_segment_64, {{4, 1}, {4, 1}, {16, 0}, {8, 1}, {8, 1}, {8, 1}, {8, 1}, {sizeof(vm_prot_t), 1}, {sizeof(vm_prot_t), 1}, {4, 1}, {4, 1}}},
 	{LC_IDFVMLIB, sizeof(struct fvmlib_command), 1, 5, vlc_noop, {{4, 1}, {4, 1}, {sizeof(union lc_str), 1}, {4, 1}, {4, 1}}},
 	{LC_LOADFVMLIB, sizeof(struct fvmlib_command), 1, 5, vlc_noop, {{4, 1}, {4, 1}, {sizeof(union lc_str), 1}, {4, 1}, {4, 1}}},

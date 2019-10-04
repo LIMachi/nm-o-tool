@@ -65,12 +65,17 @@ typedef union					u_macho_header_ptr
 # pragma pack(pop)
 
 /*
-** 0x00: unused/padding
+** 0xFF: unusable, throw error on operation
+** 0x00: unused/padding/default state
 ** 0x01: file header
+** 0x02: load commands
+** 0x03-0x31: command
+** 0x32-0xFE: data
 */
 
 typedef enum									e_memory_map
 {
+	MM_BADLAND = 0xFF,
 	MM_PAD = 0x00,
 	MM_HEADER = 0x01,
 	MM_CMD = 0x2
@@ -111,7 +116,8 @@ typedef enum									e_validator_error
 	VE_INVALID_TOTAL_COMMAND_SIZE,
 	VE_INVALID_COMMAND_SIZE,
 	VE_INVALID_LOAD_COMMAND_EXACT_VALUE,
-	VE_INVALID_LOAD_COMMAND_IN_FILE_ADDR
+	VE_INVALID_LOAD_COMMAND_IN_FILE_ADDR,
+	VE_INVALID_LOAD_COMMAND_FILE_BLOCK_SIZE
 }												t_validator_error;
 
 typedef struct									s_cursor

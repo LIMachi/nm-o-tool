@@ -1,2 +1,0 @@
-SRCS = src/elf/header.c \
-       src/mach_o/macho_validator.c
