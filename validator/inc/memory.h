@@ -25,9 +25,8 @@ typedef struct	s_memory_descriptor
 }				t_memory_descriptor;
 
 /*
-** total_size  total size in bytes of the structure, not including align padding
 ** nb_members  how many t_memory_descriptor there are
-** align       how the cursor must be aligned after accessing this struct
+** align       how the cursor must be aligned after accessing each member
 ** member[16]  up to 16 t_memory_descriptors
 ** -
 ** example:
@@ -46,12 +45,11 @@ typedef struct	s_memory_descriptor
 ** };
 ** will be represented by:
 ** t_struct_descriptor g_section_descriptor = {
-**   sizeof(struct section), 2, 4, {{16, 2, 1, 0}, {4, 9, 4, 1}}};
+**   2, 4, {{16, 2, 1, 0}, {4, 9, 4, 1}}};
 */
 
 typedef struct	s_struct_descriptor
 {
-	size_t				total_size;
 	size_t				nb_members;
 	size_t				align;
 	t_memory_descriptor	member[16];
