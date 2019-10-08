@@ -1,7 +1,7 @@
 #ifndef MEMORY_H
 # define MEMORY_H
 
-#include <stdlib.h>
+# include <stdlib.h>
 
 /*
 ** block_size
@@ -60,9 +60,11 @@ typedef enum	e_memory_error
 	ME_OK = 0,
 	ME_INVALID_MAPPING,
 	ME_OUTSIDE_MAPPING,
-	ME_ALLOCATION_FAILED,
+	ME_MAPPING_FAILED,
 	ME_INVALID_BLOC_SIZE,
-	ME_INVALID_BLOC_COUNT
+	ME_INVALID_BLOC_COUNT,
+	ME_COULD_NOT_OPEN_FILE,
+	ME_COULD_NOT_STAT_FILE
 }				t_memory_error;
 
 /*
@@ -85,13 +87,38 @@ typedef struct	s_memory_map
 	uint8_t			*map;
 }				t_memory_map;
 
+typedef struct	s_debug_tuple
+{
+	char		*file;
+	char		*function;
+	int			line;
+}				t_debug_tuple;
+
+# define DEBUG_TUPLE ((t_debug_tuple){__FILE__, (char*)__FUNCTION__, __LINE__})
+
 /*
 ** t_memory_error    memory_error(t_memory_map *mm,
-**                                t_memory_error err):
-** set error in mm, operation mainly used to catch thrown errors in LLDB/GDB
+**                                t_memory_error err,
+**                                t_debug_tuple debug_tuple):
+** set error in mm, operation mainly used to catch thrown errors in LLDB/GDB,
+** use DEBUG_TUPLE as the third arg
 */
 
-t_memory_error	memory_error(t_memory_map *mm, t_memory_error err);
+t_memory_error	memory_error(t_memory_map *mm,
+							const t_memory_error err,
+							t_debug_tuple debug_tuple);
+
+t_memory_error	memory_map_from_file(t_memory_map *mm,
+									const char *path);
+t_memory_error	memory_map_create(t_memory_map *mm,
+									const size_t size,
+									const int prot);
+t_memory_error	memory_map_from_memory_map(t_memory_map *mm,
+											t_memory_map *src,
+											const size_t index,
+											const size_t size);
+t_memory_error	memory_map_resize(t_memory_map *mm,
+									const size_t new_size);
 
 /*
 ** t_memory_error    valid_cursor(t_memory_map *mm,

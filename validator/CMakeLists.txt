@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
 project(validator)
 set(CMAKE_CXX_STANDARD 14)
-include_directories(inc /Users/hmartzol/.brew/include)
-add_library(validator   src/elf/header.c src/mach_o/macho_validator.c inc/memory.h src/memory/read_in_memory.c src/memory/valid_memory_cursor.c src/memory/error.c src/memory/read_struct_in_memory.c)
+include_directories(inc /Users/hmartzol/.brew/include /usr/local/include /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.1/include /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/usr/include)
+add_library(validator   src/elf/header.c src/mach_o/macho_validator.c src/memory/error.c src/memory/map_from_file.c src/memory/read_in_memory.c src/memory/read_struct_in_memory.c src/memory/valid_memory_cursor.c)

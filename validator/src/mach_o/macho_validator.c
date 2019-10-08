@@ -9,16 +9,19 @@
 
 #include <string.h>
 
-t_validator_error	obj_err(t_macho_file *file, t_validator_error error)
+t_validator_error	obj_err(t_macho_file *file, t_validator_error error, const char *function_def, int line_def)
 {
 	if (error != VE_OK)
+	{
 		printf("caught error, please set a breakpoint on 'obj_err'\n");
+		dprintf(2, "Caused by %s:%d\n", function_def, line_def);
+	}
 	return (file->err = error);
 }
 
 t_validator_error	clean_objfile(t_macho_file *file, t_validator_error error)
 {
-	obj_err(file, error);
+	obj_err(file, error, __FUNCTION__, __LINE__);
 	if (file->fd != -1 && file->file_map != MAP_FAILED)
 	{
 		if (/*debug*/1 && file->file.data != MAP_FAILED)
@@ -74,23 +77,23 @@ t_validator_error	reader(const char *path, t_macho_file *obj)
 ** return VE_OK on success, another error on faillure (also stored in obj)
 */
 
-t_validator_error	valid_cursor(t_macho_file *obj, t_cursor rc, size_t *align)
+t_validator_error	valid_cursor_macho(t_macho_file *obj, t_cursor rc, size_t *align)
 {
 	size_t	tmp;
 
 	if (align == NULL)
 		align = &tmp;
 	if (rc.index >= obj->size)
-		return (obj_err(obj, VE_INVALID_FILE_POSITION));
+		return (obj_err(obj, VE_INVALID_FILE_POSITION, __FUNCTION__, __LINE__));
 	if ((*align = rc.block_size % rc.align))
 		*align = rc.block_size + rc.align - *align;
 	else
 		*align = rc.block_size;
 	if (rc.index + *align < rc.index || rc.index + *align >= obj->size)
-		return (obj_err(obj, VE_INVALID_BLOC_SIZE));
+		return (obj_err(obj, VE_INVALID_BLOC_SIZE, __FUNCTION__, __LINE__));
 	if (rc.nb_blocs && (rc.nb_blocs * *align < rc.nb_blocs
 						|| rc.nb_blocs * *align < *align))
-		return (obj_err(obj, VE_INVALID_BLOC_COUNT));
+		return (obj_err(obj, VE_INVALID_BLOC_COUNT, __FUNCTION__, __LINE__));
 	return (VE_OK);
 }
 
@@ -110,14 +113,14 @@ t_validator_error	read_in_object(t_macho_file *obj, t_cursor rc,
 	size_t	it;
 	size_t	sw;
 
-	if (valid_cursor(obj, rc, &align) != VE_OK)
+	if (valid_cursor_macho(obj, rc, &align) != VE_OK)
 		return (obj->err);
 	it = (size_t)-1;
 	while (++it < rc.nb_blocs && (sw = (size_t)-1))
 	{
 		while (++sw < align)
 			if (obj->file_map[rc.index + it * align + sw] != rc.expected_mapping)
-				return (obj_err(obj, VE_INVALID_MAPING));
+				return (obj_err(obj, VE_INVALID_MAPING, __FUNCTION__, __LINE__));
 		if (buffer == NULL)
 			continue ;
 		sw = (size_t)-1;
@@ -132,12 +135,14 @@ t_validator_error	read_in_object(t_macho_file *obj, t_cursor rc,
 	return (VE_OK);
 }
 
+/*
 t_struct_descriptor g_section_structure = {sizeof(struct section), 2, {{16, 2, 1, 0}, {4, 9, 4, 1}}};
 
 t_validator_error	read_struct_in_object(t_macho_file *obj, void *buffer, t_struct_cursor sc, t_struct_descriptor sd)
 {
 
 }
+*/
 
 /*
 ** first validate the cursor
@@ -153,13 +158,13 @@ t_validator_error	claim_map(t_macho_file *obj, t_cursor rc, uint8_t claim)
 	size_t	it;
 	size_t	sw;
 
-	if (valid_cursor(obj, rc, &align) != VE_OK)
+	if (valid_cursor_macho(obj, rc, &align) != VE_OK)
 		return (obj->err);
 	it = (size_t)-1;
 	while (++it < rc.nb_blocs && (sw = (size_t)-1))
 		while (++sw < rc.block_size)
 			if (obj->file_map[rc.index + align * it + sw] != MM_PAD)
-				return (obj_err(obj, VE_INVALID_CLAIM));
+				return (obj_err(obj, VE_INVALID_CLAIM, __FUNCTION__, __LINE__));
 			else
 				obj->file_map[rc.index + align * it + sw] = claim;
 	return (VE_OK);
@@ -177,7 +182,7 @@ t_validator_error	unclaim_map(t_macho_file *obj, t_cursor rc)
 	size_t	it;
 	size_t	sw;
 
-	if (valid_cursor(obj, rc, &align) != VE_OK)
+	if (valid_cursor_macho(obj, rc, &align) != VE_OK)
 		return (obj->err);
 	it = (size_t)-1;
 	while (++it < rc.nb_blocs && (sw = (size_t)-1))
@@ -201,17 +206,17 @@ t_validator_error	validate_head(t_macho_file *obj)
 			CPU_TYPE_HPPA, CPU_TYPE_ARM, CPU_TYPE_ARM64, CPU_TYPE_MC88000,
 			CPU_TYPE_SPARC, CPU_TYPE_I860, CPU_TYPE_POWERPC,
 			CPU_TYPE_POWERPC64}))
-		return (obj_err(obj, VE_INVALID_CPU_TYPE));
+		return (obj_err(obj, VE_INVALID_CPU_TYPE, __FUNCTION__, __LINE__));
 	//subtype ignored for now, would require a huge switch - case
 	if (!in(obj->head.filetype, 11, (int[11]){MH_OBJECT, MH_EXECUTE, MH_FVMLIB,
 			MH_CORE, MH_PRELOAD, MH_DYLIB, MH_DYLINKER, MH_BUNDLE,
 			MH_DYLIB_STUB, MH_DSYM, MH_KEXT_BUNDLE}))
-		return (obj_err(obj, VE_INVALID_FILE_TYPE));
+		return (obj_err(obj, VE_INVALID_FILE_TYPE, __FUNCTION__, __LINE__));
 	if (obj->head.ncmds >= obj->size
 			|| obj->head.ncmds * sizeof(struct load_command) >= obj->size)
-		return (obj_err(obj, VE_INVALID_NUMBER_OF_COMMANDS));
+		return (obj_err(obj, VE_INVALID_NUMBER_OF_COMMANDS, __FUNCTION__, __LINE__));
 	if (obj->head.sizeofcmds >= obj->size)
-		return (obj_err(obj,VE_INVALID_TOTAL_COMMAND_SIZE));
+		return (obj_err(obj,VE_INVALID_TOTAL_COMMAND_SIZE, __FUNCTION__, __LINE__));
 	return (VE_OK);
 }
 
@@ -267,7 +272,7 @@ t_validator_error	validate_magic(t_macho_file *obj)
 		obj->endian = 1;
 	}
 	else
-		return (obj_err(obj, VE_INVALID_MAGIC_NUMBER));
+		return (obj_err(obj, VE_INVALID_MAGIC_NUMBER, __FUNCTION__, __LINE__));
 	return (VE_OK);
 }
 
@@ -286,7 +291,7 @@ t_validator_error	vlc_noop(t_load_command_descriptor *lcd, t_load_command_union 
 t_validator_error	vlc_sections_64(t_load_command_descriptor *lcd, t_load_command_union lcu, t_macho_file *file)
 {
 	size_t				it;
-	struct section_64	sec;
+	// struct section_64	sec;
 
 	(void)lcd;
 	(void)file;
@@ -306,13 +311,13 @@ t_validator_error	vlc_segment_64(t_load_command_descriptor *lcd, t_load_command_
 	seg = lcu.segment_64;
 	es = lcd->minimum_size + seg.nsects * sizeof(struct section_64);
 	if (es != (size_t)lcu.lc.cmdsize)
-		return (obj_err(file, VE_INVALID_SEGMENT_COUNT));
+		return (obj_err(file, VE_INVALID_SEGMENT_COUNT, __FUNCTION__, __LINE__));
 	printf("valid segment (64): '%.16s'\n", lcu.segment_64.segname);
 	//vm
 	if (seg.fileoff >= file->size)
-		return (obj_err(file, VE_INVALID_LOAD_COMMAND_IN_FILE_ADDR));
+		return (obj_err(file, VE_INVALID_LOAD_COMMAND_IN_FILE_ADDR, __FUNCTION__, __LINE__));
 	if (seg.fileoff + seg.filesize > file->size)
-		return (obj_err(file, VE_INVALID_LOAD_COMMAND_FILE_BLOCK_SIZE));
+		return (obj_err(file, VE_INVALID_LOAD_COMMAND_FILE_BLOCK_SIZE, __FUNCTION__, __LINE__));
 	return (vlc_sections_64(lcd, lcu, file));
 }
 
@@ -410,7 +415,7 @@ t_validator_error	validate_command(t_macho_file *file, uint32_t cmd, size_t *hea
 	next = *head + lc.cmdsize;
 	if (lc.cmdsize > 4096 || lc.cmdsize >= file->size
 			|| next < *head || next < lc.cmdsize)
-		return (obj_err(file, VE_INVALID_COMMAND_SIZE));
+		return (obj_err(file, VE_INVALID_COMMAND_SIZE, __FUNCTION__, __LINE__));
 	printf("reading command of type 0x%X and size %d as %d at %zu\n", lc.cmd, lc.cmdsize, cmd, *head);
 	it = (size_t)-1;
 	while (++it < 46)
