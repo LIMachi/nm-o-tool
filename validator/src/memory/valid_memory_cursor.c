@@ -13,7 +13,7 @@ t_memory_error	valid_cursor(t_memory_map *mm,
 	if ((*align = md.block_size % md.align))
 		*align = md.block_size + md.align - *align;
 	else
-		*align = md.block_size;
+		*align = md.block_size > md.align ? md.block_size : md.align;
 	if (mm->cursor + *align < mm->cursor || mm->cursor + *align >= mm->size)
 		return (memory_error(mm, ME_INVALID_BLOC_SIZE, DEBUG_TUPLE));
 	if (md.nb_blocks && (md.nb_blocks * *align < md.nb_blocks

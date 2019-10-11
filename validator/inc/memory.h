@@ -64,7 +64,9 @@ typedef enum	e_memory_error
 	ME_INVALID_BLOC_SIZE,
 	ME_INVALID_BLOC_COUNT,
 	ME_COULD_NOT_OPEN_FILE,
-	ME_COULD_NOT_STAT_FILE
+	ME_COULD_NOT_STAT_FILE,
+	ME_INVALID_CLAIM,
+	ME_INVALID_UNCLAIM
 }				t_memory_error;
 
 /*
@@ -95,6 +97,9 @@ typedef struct	s_debug_tuple
 }				t_debug_tuple;
 
 # define DEBUG_TUPLE ((t_debug_tuple){__FILE__, (char*)__FUNCTION__, __LINE__})
+# define MD_UINT32 ((t_memory_descriptor){4, 1, 4, 1})
+# define MD_UINT64 ((t_memory_descriptor){8, 1, 8, 1})
+# define MD_CHAR16 ((t_memory_descriptor){1, 16, 1, 0})
 
 /*
 ** t_memory_error    memory_error(t_memory_map *mm,
@@ -160,5 +165,23 @@ t_memory_error	read_struct_in_memory(t_memory_map *mm,
 										void *buffer,
 										const uint8_t mapping,
 										const t_struct_descriptor sd);
+
+/*
+** 'search' is a single block to find in 'mem' (which is described by 'md')
+** return ME_OK on success and ME_OUTSIDE_MAPPING for a failure
+** example usage:
+** in((uint32_t[1]){3}, (t_memory_descriptor){4, 5, 4, 0},
+**    (uint32_t[5]){1, 2, 3, 4, 5}, 0)
+*/
+
+t_memory_error	in(const void *search,
+					const t_memory_descriptor md,
+					const void *mem,
+					const int should_swap);
+
+t_memory_error	claim_map(t_memory_map *mm, const t_memory_descriptor md,
+							uint8_t claim, int jump);
+t_memory_error	unclaim_map(t_memory_map *mm, const t_memory_descriptor md,
+							uint8_t claim, int jump);
 
 #endif

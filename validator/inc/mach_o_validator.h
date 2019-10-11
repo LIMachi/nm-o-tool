@@ -10,34 +10,11 @@
 # include <mach-o/nlist.h>
 # include <mach-o/swap.h>
 
-/*
-** struct stat, fstat
-*/
-
-# include <sys/types.h>
-# include <sys/stat.h>
-
-/*
-** mmap
-*/
-
-# include <sys/mman.h>
-
-/*
-** open
-*/
-
-# include <fcntl.h>
-
-/*
-** close
-*/
-
-# include <unistd.h>
+# include <memory.h>
 
 # pragma pack(push, 1)
 
-typedef struct					s_mach_o_segment_command
+typedef struct									s_mach_o_segment_command
 {
 	uint32_t	cmd;
 	uint32_t	cmdsize;
@@ -50,17 +27,17 @@ typedef struct					s_mach_o_segment_command
 	vm_prot_t	initprot;
 	uint32_t	nsects;
 	uint32_t	flags;
-}								t_mach_o_segment_command;
+}												t_mach_o_segment_command;
 
-typedef struct mach_header		t_moh32;
-typedef struct mach_header_64	t_moh64;
+typedef struct mach_header						t_moh32;
+typedef struct mach_header_64					t_moh64;
 
-typedef union					u_macho_header_ptr
+typedef union									u_macho_header_ptr
 {
 	uint8_t	*data;
 	t_moh32	*h32;
 	t_moh64	*h64;
-}								t_macho_header_ptr;
+}												t_macho_header_ptr;
 
 # pragma pack(pop)
 
@@ -73,72 +50,36 @@ typedef union					u_macho_header_ptr
 ** 0x32-0xFE: data
 */
 
-typedef enum									e_memory_map
+typedef enum									e_memory_map_claim
 {
 	MM_BADLAND = 0xFF,
 	MM_PAD = 0x00,
 	MM_HEADER = 0x01,
 	MM_CMD = 0x2
-}												t_memory_map;
+}												t_memory_map_claim;
 
 typedef enum									e_validator_error
 {
 	VE_OK = 0,
-	VE_NULL_PTR,
-	VE_COULD_NOT_OPEN_FILE,
-	VE_COULD_NOT_RETRIEVE_STATS,
-	VE_MAPPING_ERROR,
-	VE_INVALID_HEAD_SIZE,
+	VE_ME_MASK = 0x80000000,
 	VE_INVALID_MAGIC_NUMBER,
-	VE_INVALID_WORD_SIZE,
-	VE_INVALID_ENDIAN,
-	VE_INVALID_ELF_VERSION,
-	VE_INVALID_OS_ABI,
 	VE_INVALID_TYPE,
-	VE_INVALID_MACHINE,
-	VE_INVALID_ENTRY_POSITION,
-	VE_INVALID_SEGMENT_TABLE_POSITION,
-	VE_INVALID_SECTION_TABLE_POSITION,
-	VE_INVALID_SEGMENT_HEADER_SIZE,
-	VE_INVALID_SECTION_HEADER_SIZE,
 	VE_INVALID_SEGMENT_COUNT,
-	VE_INVALID_SECTION_COUNT,
-	VE_FILE_MAPPING_CONFLICT,
-	VE_INVALID_BLOC_SIZE,
-	VE_INVALID_FILE_POSITION,
-	VE_INVALID_BLOC_COUNT,
-	VE_INVALID_MAPING,
-	VE_INVALID_CLAIM,
 	VE_INVALID_CPU_TYPE,
-	VE_INVALID_CPU_SUBTYPE,
 	VE_INVALID_FILE_TYPE,
 	VE_INVALID_NUMBER_OF_COMMANDS,
 	VE_INVALID_TOTAL_COMMAND_SIZE,
 	VE_INVALID_COMMAND_SIZE,
-	VE_INVALID_LOAD_COMMAND_EXACT_VALUE,
 	VE_INVALID_LOAD_COMMAND_IN_FILE_ADDR,
 	VE_INVALID_LOAD_COMMAND_FILE_BLOCK_SIZE
 }												t_validator_error;
 
-typedef struct									s_cursor
-{
-	size_t			index;
-	size_t			nb_blocs;
-	size_t			block_size;
-	size_t			align;
-	t_memory_map	expected_mapping;
-}												t_cursor;
-
 typedef struct									s_macho_file
 {
-	int						fd;
-	size_t					size;
+	t_memory_map			mm;
 	t_macho_header_ptr		file;
-	uint8_t					*file_map;
-	uint8_t					*memory_map;
 	t_moh64					head;
 	t_validator_error		err;
-	int						endian;
 	int						format;
 }												t_macho_file;
 
@@ -200,5 +141,12 @@ struct										s_load_command_descriptor
 	t_vlc					vlc;
 	t_load_command_element	elems[20];
 };
+
+t_validator_error							macho_error(t_macho_file *mo,
+											const t_validator_error err,
+											const t_debug_tuple debug_tuple);
+
+t_validator_error							validate_magic(t_macho_file *obj);
+t_validator_error							validate_head(t_macho_file *obj);
 
 #endif

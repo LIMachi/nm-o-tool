@@ -9,6 +9,7 @@
 
 #include <string.h>
 
+/*
 t_validator_error	obj_err(t_macho_file *file, t_validator_error error, const char *function_def, int line_def)
 {
 	if (error != VE_OK)
@@ -18,13 +19,15 @@ t_validator_error	obj_err(t_macho_file *file, t_validator_error error, const cha
 	}
 	return (file->err = error);
 }
+*/
 
+/*
 t_validator_error	clean_objfile(t_macho_file *file, t_validator_error error)
 {
 	obj_err(file, error, __FUNCTION__, __LINE__);
 	if (file->fd != -1 && file->file_map != MAP_FAILED)
 	{
-		if (/*debug*/1 && file->file.data != MAP_FAILED)
+		if (1 && file->file.data != MAP_FAILED)
 			for (size_t it = 0; it < file->size && it < 4096; ++it)
 				it % 16 == 0 ? printf("%08.8llX ", (unsigned long long)it) : 0, printf("\x1b[38;5;%um%02.2X\x1b[0m%c", 29 + file->file_map[it] % 8, file->file.data[it], it % 16 == 15 ? '\n' : ' ');
 		munmap(file->file_map, file->size);
@@ -44,7 +47,9 @@ t_validator_error	clean_objfile(t_macho_file *file, t_validator_error error)
 	file->head = (struct mach_header_64){.magic = 0};
 	return (error);
 }
+*/
 
+/*
 t_validator_error	reader(const char *path, t_macho_file *obj)
 {
 	struct stat	sb;
@@ -69,6 +74,7 @@ t_validator_error	reader(const char *path, t_macho_file *obj)
 		obj->file_map[it] = MM_PAD;
 	return (VE_OK);
 }
+*/
 
 /*
 ** secured accessor of memory
@@ -77,6 +83,7 @@ t_validator_error	reader(const char *path, t_macho_file *obj)
 ** return VE_OK on success, another error on faillure (also stored in obj)
 */
 
+/*
 t_validator_error	valid_cursor_macho(t_macho_file *obj, t_cursor rc, size_t *align)
 {
 	size_t	tmp;
@@ -96,6 +103,7 @@ t_validator_error	valid_cursor_macho(t_macho_file *obj, t_cursor rc, size_t *ali
 		return (obj_err(obj, VE_INVALID_BLOC_COUNT, __FUNCTION__, __LINE__));
 	return (VE_OK);
 }
+*/
 
 /*
 ** first validate the cursor
@@ -106,6 +114,7 @@ t_validator_error	valid_cursor_macho(t_macho_file *obj, t_cursor rc, size_t *ali
 ** return VE_OK on success, another error on faillure (also stored in obj)
 */
 
+/*
 t_validator_error	read_in_object(t_macho_file *obj, t_cursor rc,
 									void *buffer, int should_swap)
 {
@@ -134,6 +143,7 @@ t_validator_error	read_in_object(t_macho_file *obj, t_cursor rc,
 	}
 	return (VE_OK);
 }
+*/
 
 /*
 t_struct_descriptor g_section_structure = {sizeof(struct section), 2, {{16, 2, 1, 0}, {4, 9, 4, 1}}};
@@ -152,6 +162,7 @@ t_validator_error	read_struct_in_object(t_macho_file *obj, void *buffer, t_struc
 ** by default the padding are not mapped
 */
 
+/*
 t_validator_error	claim_map(t_macho_file *obj, t_cursor rc, uint8_t claim)
 {
 	size_t	align;
@@ -169,6 +180,7 @@ t_validator_error	claim_map(t_macho_file *obj, t_cursor rc, uint8_t claim)
 				obj->file_map[rc.index + align * it + sw] = claim;
 	return (VE_OK);
 }
+*/
 
 /*
 ** first validate the cursor
@@ -176,6 +188,7 @@ t_validator_error	claim_map(t_macho_file *obj, t_cursor rc, uint8_t claim)
 ** return VE_OK on success
 */
 
+/*
 t_validator_error	unclaim_map(t_macho_file *obj, t_cursor rc)
 {
 	size_t	align;
@@ -190,7 +203,9 @@ t_validator_error	unclaim_map(t_macho_file *obj, t_cursor rc)
 				obj->file_map[rc.index + align * it + sw] = MM_PAD;
 	return (VE_OK);
 }
+*/
 
+/*
 int		in(const int val, size_t cnt, const int test[])
 {
 	while (cnt--)
@@ -198,88 +213,13 @@ int		in(const int val, size_t cnt, const int test[])
 			return (1);
 	return (0);
 }
-
-t_validator_error	validate_head(t_macho_file *obj)
-{
-	if (!in(obj->head.cputype, 14, (int[14]){CPU_TYPE_VAX, CPU_TYPE_MC680x0,
-			CPU_TYPE_X86, CPU_TYPE_I386, CPU_TYPE_X86_64, CPU_TYPE_MC98000,
-			CPU_TYPE_HPPA, CPU_TYPE_ARM, CPU_TYPE_ARM64, CPU_TYPE_MC88000,
-			CPU_TYPE_SPARC, CPU_TYPE_I860, CPU_TYPE_POWERPC,
-			CPU_TYPE_POWERPC64}))
-		return (obj_err(obj, VE_INVALID_CPU_TYPE, __FUNCTION__, __LINE__));
-	//subtype ignored for now, would require a huge switch - case
-	if (!in(obj->head.filetype, 11, (int[11]){MH_OBJECT, MH_EXECUTE, MH_FVMLIB,
-			MH_CORE, MH_PRELOAD, MH_DYLIB, MH_DYLINKER, MH_BUNDLE,
-			MH_DYLIB_STUB, MH_DSYM, MH_KEXT_BUNDLE}))
-		return (obj_err(obj, VE_INVALID_FILE_TYPE, __FUNCTION__, __LINE__));
-	if (obj->head.ncmds >= obj->size
-			|| obj->head.ncmds * sizeof(struct load_command) >= obj->size)
-		return (obj_err(obj, VE_INVALID_NUMBER_OF_COMMANDS, __FUNCTION__, __LINE__));
-	if (obj->head.sizeofcmds >= obj->size)
-		return (obj_err(obj,VE_INVALID_TOTAL_COMMAND_SIZE, __FUNCTION__, __LINE__));
-	return (VE_OK);
-}
-
-t_validator_error	validate_head_32(t_macho_file *obj)
-{
-	if (claim_map(obj, (t_cursor){0, 1, sizeof(t_moh32), 1, MM_PAD}, MM_HEADER))
-		return (obj->err);
-	if (read_in_object(obj, (t_cursor){__offsetof(t_moh32, cputype), 1,
-		sizeof(cpu_type_t), 1, MM_HEADER}, &obj->head.cputype, 1)
-		|| read_in_object(obj, (t_cursor){__offsetof(t_moh32, cpusubtype),
-		1, sizeof(cpu_subtype_t), 1, MM_HEADER}, &obj->head.cpusubtype, 1)
-		|| read_in_object(obj, (t_cursor){__offsetof(t_moh32, filetype), 4,
-		sizeof(uint32_t), 1, MM_HEADER}, &obj->head.filetype, 1))
-		return (obj->err);
-	return (validate_head(obj));
-}
-
-t_validator_error	validate_head_64(t_macho_file *obj)
-{
-	if (claim_map(obj, (t_cursor){0, 1, sizeof(t_moh64), 1, MM_PAD}, MM_HEADER))
-		return (obj->err);
-	if (read_in_object(obj, (t_cursor){__offsetof(t_moh64, cputype), 1,
-			sizeof(cpu_type_t), 1, MM_HEADER}, &obj->head.cputype, 1)
-			|| read_in_object(obj, (t_cursor){__offsetof(t_moh64, cpusubtype),
-			1, sizeof(cpu_subtype_t), 1, MM_HEADER}, &obj->head.cpusubtype, 1)
-			|| read_in_object(obj, (t_cursor){__offsetof(t_moh64, filetype), 5,
-			sizeof(uint32_t), 1, MM_HEADER}, &obj->head.filetype, 1))
-		return (obj->err);
-	return (validate_head(obj));
-}
-
-t_validator_error	validate_magic(t_macho_file *obj)
-{
-	obj->head.magic = obj->file.h32->magic;
-	if (obj->head.magic == MH_MAGIC)
-	{
-		obj->format = 32;
-		obj->endian = 0;
-	}
-	else if (obj->head.magic == MH_MAGIC_64)
-	{
-		obj->format = 64;
-		obj->endian = 0;
-	}
-	else if (obj->head.magic == MH_CIGAM)
-	{
-		obj->format = 32;
-		obj->endian = 1;
-	}
-	else if (obj->head.magic == MH_CIGAM_64)
-	{
-		obj->format = 64;
-		obj->endian = 1;
-	}
-	else
-		return (obj_err(obj, VE_INVALID_MAGIC_NUMBER, __FUNCTION__, __LINE__));
-	return (VE_OK);
-}
+*/
 
 /*
 ** default command validator, always return valid on any command
 */
 
+/*
 t_validator_error	vlc_noop(t_load_command_descriptor *lcd, t_load_command_union lcu, t_macho_file *file)
 {
 	(void)lcd;
@@ -287,7 +227,9 @@ t_validator_error	vlc_noop(t_load_command_descriptor *lcd, t_load_command_union 
 	(void)lcu;
 	return (VE_OK);
 }
+*/
 
+/*
 t_validator_error	vlc_sections_64(t_load_command_descriptor *lcd, t_load_command_union lcu, t_macho_file *file)
 {
 	size_t				it;
@@ -302,7 +244,9 @@ t_validator_error	vlc_sections_64(t_load_command_descriptor *lcd, t_load_command
 	}
 	return (VE_OK);
 }
+*/
 
+/*
 t_validator_error	vlc_segment_64(t_load_command_descriptor *lcd, t_load_command_union lcu, t_macho_file *file)
 {
 	size_t						es;
@@ -320,7 +264,9 @@ t_validator_error	vlc_segment_64(t_load_command_descriptor *lcd, t_load_command_
 		return (obj_err(file, VE_INVALID_LOAD_COMMAND_FILE_BLOCK_SIZE, __FUNCTION__, __LINE__));
 	return (vlc_sections_64(lcd, lcu, file));
 }
+*/
 
+/*
 static const t_load_command_descriptor	g_lcd[46] = {
 	{LC_SEGMENT, sizeof(struct segment_command), 0, 11, vlc_noop, {{4, 1}, {4, 1}, {16, 0}, {4, 1}, {4, 1}, {4, 1}, {4, 1}, {sizeof(vm_prot_t), 1}, {sizeof(vm_prot_t), 1}, {4, 1}, {4, 1}}},
 	{LC_SEGMENT_64, sizeof(struct segment_command_64), 0, 11, vlc_segment_64, {{4, 1}, {4, 1}, {16, 0}, {8, 1}, {8, 1}, {8, 1}, {8, 1}, {sizeof(vm_prot_t), 1}, {sizeof(vm_prot_t), 1}, {4, 1}, {4, 1}}},
@@ -369,7 +315,9 @@ static const t_load_command_descriptor	g_lcd[46] = {
 	{LC_MAIN, sizeof(struct entry_point_command), 1, 4, vlc_noop, {{4, 1}, {4, 1}, {8, 1}, {8, 1}}},
 	{LC_SOURCE_VERSION, sizeof(struct source_version_command), 1, 3, vlc_noop, {{4, 1}, {4, 1}, {8, 1}}}
 };
+*/
 
+/*
 t_validator_error	test_load_command(t_macho_file *file, size_t head,
 										t_load_command_descriptor lcd)
 {
@@ -399,7 +347,9 @@ t_validator_error	test_load_command(t_macho_file *file, size_t head,
 	}
 	return (lcd.vlc(&lcd, lcu, file));
 }
+*/
 
+/*
 t_validator_error	validate_command(t_macho_file *file, uint32_t cmd, size_t *head)
 {
 	struct load_command	lc;
@@ -426,27 +376,33 @@ t_validator_error	validate_command(t_macho_file *file, uint32_t cmd, size_t *hea
 	*head = next;
 	return (VE_OK);
 }
+*/
 
 int		main(int argc, char *argv[])
 {
 	t_macho_file		file;
-	uint32_t			cmd;
-	size_t				head;
+//	uint32_t			cmd;
+//	size_t				head;
 
 	if (argc < 2)
 		return (0);
-	if ((file.err = reader(argv[1], &file)) != VE_OK)
+//	if ((file.err = reader(argv[1], &file)) != VE_OK)
+//		return (file.err);
+//	if ((validate_magic(&file) != VE_OK)
+//			|| (file.format == 64 ? validate_head_64(&file)
+//								: validate_head_32(&file)))
+//		return (file.err);
+//	head = file.format == 64 ? sizeof(t_moh64) : sizeof(t_moh32);
+//	if (claim_map(&file, (t_cursor){head, 1, file.head.sizeofcmds, 1, MM_PAD}, MM_CMD) != VE_OK)
+//		return (clean_objfile(&file, file.err));
+//	cmd = (uint32_t)-1;
+//	while (++cmd < file.head.ncmds)
+//		if (validate_command(&file, cmd, &head) != VE_OK)
+//			break ;
+//	return (clean_objfile(&file, file.err));
+	if (memory_map_from_file(&file.mm, argv[1]) != VE_OK)
+		return (file.mm.error);
+	if (validate_head(&file) != VE_OK)
 		return (file.err);
-	if ((validate_magic(&file) != VE_OK)
-			|| (file.format == 64 ? validate_head_64(&file)
-								: validate_head_32(&file)))
-		return (file.err);
-	head = file.format == 64 ? sizeof(t_moh64) : sizeof(t_moh32);
-	if (claim_map(&file, (t_cursor){head, 1, file.head.sizeofcmds, 1, MM_PAD}, MM_CMD) != VE_OK)
-		return (clean_objfile(&file, file.err));
-	cmd = (uint32_t)-1;
-	while (++cmd < file.head.ncmds)
-		if (validate_command(&file, cmd, &head) != VE_OK)
-			break ;
-	return (clean_objfile(&file, file.err));
+	return (0);
 }
