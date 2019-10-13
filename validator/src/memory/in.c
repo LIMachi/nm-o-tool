@@ -1,6 +1,18 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   in.c                                               :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2000/00/00 00:00:00 by hmartzol          #+#    #+#             */
+/*   Updated: 2000/00/00 00:00:00 by hmartzol         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include <memory.h>
 
-t_memory_error	in(const void *search, const t_memory_descriptor md,
+size_t	in(const void *search, const t_memory_descriptor md,
 	const void *mem, const int should_swap)
 {
 	size_t	it;
@@ -25,7 +37,7 @@ t_memory_error	in(const void *search, const t_memory_descriptor md,
 			else if (((uint8_t*)search)[sw] != ((uint8_t*)mem)[it * align + sw])
 				break ;
 		if (sw == md.block_size)
-			return (ME_OK);
+			return (it);
 	}
-	return (ME_OUTSIDE_MAPPING);
+	return ((size_t)-1);
 }

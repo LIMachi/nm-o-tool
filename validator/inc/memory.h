@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   memory.h                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2000/00/00 00:00:00 by hmartzol          #+#    #+#             */
+/*   Updated: 2000/00/00 00:00:00 by hmartzol         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef MEMORY_H
 # define MEMORY_H
 
@@ -27,6 +39,7 @@ typedef struct	s_memory_descriptor
 /*
 ** nb_members  how many t_memory_descriptor there are
 ** align       how the cursor must be aligned after accessing each member
+** total_size  sum of all the member size (aligned)
 ** member[16]  up to 16 t_memory_descriptors
 ** -
 ** example:
@@ -45,13 +58,14 @@ typedef struct	s_memory_descriptor
 ** };
 ** will be represented by:
 ** t_struct_descriptor g_section_descriptor = {
-**   2, 4, {{16, 2, 1, 0}, {4, 9, 4, 1}}};
+**   2, 4, sizeof(struct section), {{16, 2, 1, 0}, {4, 9, 4, 1}}};
 */
 
 typedef struct	s_struct_descriptor
 {
 	size_t				nb_members;
 	size_t				align;
+	size_t				total_size;
 	t_memory_descriptor	member[16];
 }				t_struct_descriptor;
 
@@ -100,6 +114,8 @@ typedef struct	s_debug_tuple
 # define MD_UINT32 ((t_memory_descriptor){4, 1, 4, 1})
 # define MD_UINT64 ((t_memory_descriptor){8, 1, 8, 1})
 # define MD_CHAR16 ((t_memory_descriptor){1, 16, 1, 0})
+
+# define MD_LOAD_COMMAND ((t_memory_descriptor){4, 2, 4, 1})
 
 /*
 ** t_memory_error    memory_error(t_memory_map *mm,
@@ -168,13 +184,13 @@ t_memory_error	read_struct_in_memory(t_memory_map *mm,
 
 /*
 ** 'search' is a single block to find in 'mem' (which is described by 'md')
-** return ME_OK on success and ME_OUTSIDE_MAPPING for a failure
+** return index on success and (size_t)-1 for a failure
 ** example usage:
 ** in((uint32_t[1]){3}, (t_memory_descriptor){4, 5, 4, 0},
-**    (uint32_t[5]){1, 2, 3, 4, 5}, 0)
+**    (uint32_t[5]){1, 2, 3, 4, 5}, 0) != -1ull
 */
 
-t_memory_error	in(const void *search,
+size_t			in(const void *search,
 					const t_memory_descriptor md,
 					const void *mem,
 					const int should_swap);

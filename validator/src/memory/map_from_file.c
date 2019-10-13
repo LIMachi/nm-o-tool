@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   map_from_file.c                                    :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2000/00/00 00:00:00 by hmartzol          #+#    #+#             */
+/*   Updated: 2000/00/00 00:00:00 by hmartzol         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include <memory.h>
 
 /*
@@ -40,17 +52,17 @@ t_memory_error	memory_map_from_file(t_memory_map *mm,
 	if (fstat(fd, &sb))
 		return ((close(fd) & 0)
 			| memory_error(mm, ME_COULD_NOT_STAT_FILE, DEBUG_TUPLE));
-	mm->size = (size_t)sb.st_size;
+		mm->size = (size_t)sb.st_size;
 	mm->ptr = mmap(NULL, mm->size, PROT_READ, MAP_PRIVATE, fd, 0);
 	close(fd);
 	if (mm->ptr == MAP_FAILED)
 		return (memory_error(mm, ME_MAPPING_FAILED, DEBUG_TUPLE));
-	mm->map = mmap(NULL, mm->size, PROT_READ |PROT_WRITE,
+	mm->map = mmap(NULL, mm->size, PROT_READ | PROT_WRITE,
 		MAP_ANON | MAP_PRIVATE, -1, 0);
 	if (mm->map == MAP_FAILED)
 		return ((munmap(mm->ptr, mm->size) & 0)
 			| memory_error(mm, ME_MAPPING_FAILED, DEBUG_TUPLE));
-	fd = -1;
+		fd = -1;
 	while (++fd < (int)mm->size)
 		mm->map[fd] = 0;
 	mm->swap = 0;

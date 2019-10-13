@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   mach_o_validator.h                                 :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2000/00/00 00:00:00 by hmartzol          #+#    #+#             */
+/*   Updated: 2000/00/00 00:00:00 by hmartzol         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef MACH_O_VALIDATOR_H
 # define MACH_O_VALIDATOR_H
 
@@ -14,7 +26,7 @@
 
 # pragma pack(push, 1)
 
-typedef struct									s_mach_o_segment_command
+typedef struct								s_mach_o_segment_command
 {
 	uint32_t	cmd;
 	uint32_t	cmdsize;
@@ -27,17 +39,17 @@ typedef struct									s_mach_o_segment_command
 	vm_prot_t	initprot;
 	uint32_t	nsects;
 	uint32_t	flags;
-}												t_mach_o_segment_command;
+}											t_mach_o_segment_command;
 
-typedef struct mach_header						t_moh32;
-typedef struct mach_header_64					t_moh64;
+typedef struct mach_header					t_moh32;
+typedef struct mach_header_64				t_moh64;
 
-typedef union									u_macho_header_ptr
+typedef union								u_macho_header_ptr
 {
 	uint8_t	*data;
 	t_moh32	*h32;
 	t_moh64	*h64;
-}												t_macho_header_ptr;
+}											t_macho_header_ptr;
 
 # pragma pack(pop)
 
@@ -50,15 +62,15 @@ typedef union									u_macho_header_ptr
 ** 0x32-0xFE: data
 */
 
-typedef enum									e_memory_map_claim
+typedef enum								e_memory_map_claim
 {
 	MM_BADLAND = 0xFF,
 	MM_PAD = 0x00,
 	MM_HEADER = 0x01,
 	MM_CMD = 0x2
-}												t_memory_map_claim;
+}											t_memory_map_claim;
 
-typedef enum									e_validator_error
+typedef enum								e_validator_error
 {
 	VE_OK = 0,
 	VE_ME_MASK = 0x80000000,
@@ -71,19 +83,20 @@ typedef enum									e_validator_error
 	VE_INVALID_TOTAL_COMMAND_SIZE,
 	VE_INVALID_COMMAND_SIZE,
 	VE_INVALID_LOAD_COMMAND_IN_FILE_ADDR,
-	VE_INVALID_LOAD_COMMAND_FILE_BLOCK_SIZE
-}												t_validator_error;
+	VE_INVALID_LOAD_COMMAND_FILE_BLOCK_SIZE,
+	VE_INVALID_LOAD_COMMAND_ID
+}											t_validator_error;
 
-typedef struct									s_macho_file
+typedef struct								s_macho_file
 {
 	t_memory_map			mm;
 	t_macho_header_ptr		file;
 	t_moh64					head;
 	t_validator_error		err;
 	int						format;
-}												t_macho_file;
+}											t_macho_file;
 
-typedef union									u_load_command_union
+typedef union								u_load_command_union
 {
 	uint8_t								data[80];
 	struct load_command					lc;
@@ -128,18 +141,15 @@ typedef struct								s_load_command_element
 typedef struct s_load_command_descriptor	t_load_command_descriptor;
 
 typedef t_validator_error					(*t_vlc)(
-												t_load_command_descriptor *lcd,
-												t_load_command_union lcu,
-												t_macho_file *file);
+										const t_load_command_descriptor *lcd,
+										const t_load_command_union lcu,
+										t_macho_file *file);
 
 struct										s_load_command_descriptor
 {
-	uint32_t				id;
-	size_t					minimum_size;
-	int						is_exact_size : 1;
-	uint8_t					nb_elems;
-	t_vlc					vlc;
-	t_load_command_element	elems[20];
+	uint32_t			id;
+	t_vlc				vlc;
+	t_struct_descriptor	sd;
 };
 
 t_validator_error							macho_error(t_macho_file *mo,
@@ -148,5 +158,8 @@ t_validator_error							macho_error(t_macho_file *mo,
 
 t_validator_error							validate_magic(t_macho_file *obj);
 t_validator_error							validate_head(t_macho_file *obj);
+
+t_validator_error							validate_commands(
+															t_macho_file *obj);
 
 #endif

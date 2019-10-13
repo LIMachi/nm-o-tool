@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   read_in_memory.c                                   :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2000/00/00 00:00:00 by hmartzol          #+#    #+#             */
+/*   Updated: 2000/00/00 00:00:00 by hmartzol         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include <memory.h>
 
 t_memory_error	read_in_memory(t_memory_map *mm, void *buffer,
@@ -14,7 +26,7 @@ t_memory_error	read_in_memory(t_memory_map *mm, void *buffer,
 	{
 		while (++sw < align)
 			if (exmap != 0xFF && mm->map[mm->cursor + it * align + sw] != exmap)
-				return (ME_INVALID_MAPPING);
+				return (memory_error(mm, ME_INVALID_MAPPING, DEBUG_TUPLE));
 		if (buffer == NULL)
 			continue ;
 		sw = (size_t)-1;
