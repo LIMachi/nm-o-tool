@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   error.c                                            :+:      :+:    :+:   */
+/*   read_struct_in_memory.c                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -12,28 +12,28 @@
 
 #include <memory.h>
 
-/*
-** <unistd.h>
-** ssize_t write(int fildes, const void *buf, size_t nbyte);
-*/
-
-#include <unistd.h>
-
-/*
-** <stdio.h>
-** int dprintf(int fd, const char * restrict format, ...);
-*/
-
-#include <stdio.h>
-
-t_memory_error	memory_error(t_memory_error *me, const t_memory_error err,
-	t_debug_tuple debug_tuple)
+t_memory_error	read_struct_in_memory(t_memory_map *mm, void *buffer,
+							const uint8_t mapping, const t_struct_descriptor sd)
 {
-	if (err != ME_OK)
-		dprintf(2, "Caught error(%d) in memory manipulation, please set a break"
-			"point\nCaused by %s:%s:%d\n", err, debug_tuple.file,
-			debug_tuple.function, debug_tuple.line);
-	if (me != NULL)
-		*me = err;
-	return (err);
+	size_t	it;
+	size_t	t;
+	size_t	c;
+
+	it = (size_t)-1;
+	c = 0;
+	while (++it < sd.nb_members)
+	{
+		t = mm->cursor;
+		if (read_in_memory(mm, &buffer[c], mapping, sd.member[it]) != ME_OK)
+			return (mm->err);
+		t = mm->cursor - t;
+		c += t;
+		if (t % sd.align)
+		{
+			t = sd.align - (t % sd.align);
+			mm->cursor += t;
+			c += t;
+		}
+	}
+	return (ME_OK);
 }

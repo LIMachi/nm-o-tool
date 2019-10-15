@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   read_struct_in_memory.c                            :+:      :+:    :+:   */
+/*   claim_map.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -12,28 +12,26 @@
 
 #include <memory.h>
 
-t_memory_error	read_struct_in_memory(t_memory_map *mm, void *buffer,
-							const uint8_t mapping, const t_struct_descriptor sd)
+t_memory_error	claim_map(t_memory_map *mm, const t_memory_descriptor md,
+	uint8_t claim, int jump)
 {
+	size_t	align;
 	size_t	it;
-	size_t	t;
-	size_t	c;
+	size_t	sw;
 
+	if (valid_cursor(mm, md, &align) != ME_OK)
+		return (mm->err);
 	it = (size_t)-1;
-	c = 0;
-	while (++it < sd.nb_members)
+	while (++it < md.nb_blocks)
 	{
-		t = mm->cursor;
-		if (read_in_memory(mm, &buffer[c], mapping, sd.member[it]) != ME_OK)
-			return (mm->error);
-		t = mm->cursor - t;
-		c += t;
-		if (t % sd.align)
-		{
-			t = sd.align - (t % sd.align);
-			mm->cursor += t;
-			c += t;
-		}
+		sw = (size_t)-1;
+		while (++sw < md.block_size)
+			if (mm->map[mm->cursor + align * it + sw])
+				return (memory_error(&mm->err, ME_INVALID_CLAIM, DEBUG_TUPLE));
+			else
+				mm->map[mm->cursor + align * it + sw] = claim;
 	}
+	if (jump)
+		mm->cursor += align * md.nb_blocks;
 	return (ME_OK);
 }

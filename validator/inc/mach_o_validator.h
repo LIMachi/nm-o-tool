@@ -84,12 +84,14 @@ typedef enum								e_validator_error
 	VE_INVALID_COMMAND_SIZE,
 	VE_INVALID_LOAD_COMMAND_IN_FILE_ADDR,
 	VE_INVALID_LOAD_COMMAND_FILE_BLOCK_SIZE,
-	VE_INVALID_LOAD_COMMAND_ID
+	VE_INVALID_LOAD_COMMAND_ID,
+	VE_MISMATCHED_SEGNAME
 }											t_validator_error;
 
 typedef struct								s_macho_file
 {
 	t_memory_map			mm;
+	t_vm_map				vmm;
 	t_macho_header_ptr		file;
 	t_moh64					head;
 	t_validator_error		err;
@@ -161,5 +163,10 @@ t_validator_error							validate_head(t_macho_file *obj);
 
 t_validator_error							validate_commands(
 															t_macho_file *obj);
+
+t_validator_error	vlc_sections_64(const t_load_command_descriptor *lcd,
+									 const t_load_command_union lcu, t_macho_file *file);
+t_validator_error	vlc_segment_64(const t_load_command_descriptor *lcd,
+									const t_load_command_union lcu, t_macho_file *file);
 
 #endif

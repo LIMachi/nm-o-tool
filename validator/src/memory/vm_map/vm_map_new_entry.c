@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   valid_memory_cursor.c                              :+:      :+:    :+:   */
+/*   vm_map_new_entry.h                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -12,24 +12,29 @@
 
 #include <memory.h>
 
-t_memory_error	valid_cursor(t_memory_map *mm,
-							const t_memory_descriptor md,
-							size_t *align)
+t_memory_error	vm_map_new_entry(t_vm_map *vmm, size_t start, size_t finish,
+	unsigned long long id)
 {
-	size_t	tmp;
+	size_t	t;
 
-	if (align == NULL)
-		align = &tmp;
-	if (mm->cursor >= mm->size)
-		return (memory_error(mm, ME_OUTSIDE_MAPPING, DEBUG_TUPLE));
-	if ((*align = md.block_size % md.align))
-		*align = md.block_size + md.align - *align;
-	else
-		*align = md.block_size > md.align ? md.block_size : md.align;
-	if (mm->cursor + *align < mm->cursor || mm->cursor + *align >= mm->size)
-		return (memory_error(mm, ME_INVALID_BLOC_SIZE, DEBUG_TUPLE));
-	if (md.nb_blocks && (md.nb_blocks * *align < md.nb_blocks
-						|| md.nb_blocks * *align < *align))
-		return (memory_error(mm, ME_INVALID_BLOC_COUNT, DEBUG_TUPLE));
+	if (start > finish)
+	{
+		t = start;
+		start = finish;
+		finish = t;
+	}
+	--finish;
+	t = (size_t)-1;
+	while (++t < vmm->nb_entries)
+		if (start <= vmm->entries[t].finish && finish >= vmm->entries[t].start)
+			return (memory_error(&vmm->err, ME_INVALID_MAPPING, DEBUG_TUPLE));
+	if ((vmm->entries = reallocf(vmm->entries,
+			sizeof(t_vm_map_entry) * (vmm->nb_entries + 1))) == NULL)
+		return (memory_error(&vmm->err, ME_MAPPING_FAILED, DEBUG_TUPLE));
+	vmm->entries[vmm->nb_entries++] = (t_vm_map_entry){id, start, finish};
+	if (finish + 1 > vmm->total_size)
+		vmm->total_size = finish + 1;
+	if (id > vmm->biggest_id)
+		vmm->biggest_id = id;
 	return (ME_OK);
 }

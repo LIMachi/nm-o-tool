@@ -98,10 +98,26 @@ typedef struct	s_memory_map
 	int				swap;
 	size_t			size;
 	size_t			cursor;
-	t_memory_error	error;
+	t_memory_error	err;
 	uint8_t			*ptr;
 	uint8_t			*map;
 }				t_memory_map;
+
+typedef struct	s_vm_map_entry
+{
+	unsigned long long	id;
+	size_t				start;
+	size_t				finish;
+}				t_vm_map_entry;
+
+typedef struct	s_vm_map
+{
+	size_t				total_size;
+	unsigned long long	biggest_id;
+	size_t				nb_entries;
+	t_memory_error		err;
+	t_vm_map_entry		*entries;
+}				t_vm_map;
 
 typedef struct	s_debug_tuple
 {
@@ -125,7 +141,7 @@ typedef struct	s_debug_tuple
 ** use DEBUG_TUPLE as the third arg
 */
 
-t_memory_error	memory_error(t_memory_map *mm,
+t_memory_error	memory_error(t_memory_error *me,
 							const t_memory_error err,
 							t_debug_tuple debug_tuple);
 
@@ -199,5 +215,28 @@ t_memory_error	claim_map(t_memory_map *mm, const t_memory_descriptor md,
 							uint8_t claim, int jump);
 t_memory_error	unclaim_map(t_memory_map *mm, const t_memory_descriptor md,
 							uint8_t claim, int jump);
+
+/*
+** try to insert a new vm entry, if there is a potential overlap, return
+** ME_INVALID_MAPPING and on memory error return ME_MAPPING_FAILED
+** return ME_OK on success
+*/
+
+t_memory_error	vm_map_new_entry(t_vm_map *vmm, size_t start, size_t finish,
+									unsigned long long id);
+
+/*
+** try to create a new entry over a previous entry (the previous entry should
+** contain the entirety of the new entry), the size of the original entry will
+** change, and if the new is not at the start or end of the old entry, the old
+** entry will be duplicated to englobe the new entry
+** return ME_OUTSIDE_MAPPING if the new is not contained in the old
+** return ME_INVALID_MAPPING if the original_id does not exist
+** return ME_MAPPING_FAILED on allocation/insertion error
+** return ME_OK on success
+*/
+
+t_memory_error	vm_map_recut_entry(t_vm_map *vmm, t_vm_map_entry new,
+									unsigned long long original_id);
 
 #endif

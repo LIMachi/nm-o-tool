@@ -26,40 +26,6 @@ t_validator_error	vlc_noop(const t_load_command_descriptor *lcd,
 	return (VE_OK);
 }
 
-t_validator_error	vlc_sections_64(const t_load_command_descriptor *lcd,
-	const t_load_command_union lcu, t_macho_file *file)
-{
-	size_t				it;
-
-	(void)lcd;
-	(void)file;
-	it = (size_t)-1;
-	while (++it < lcu.segment_64.nsects)
-	{
-	}
-	return (VE_OK);
-}
-
-t_validator_error	vlc_segment_64(const t_load_command_descriptor *lcd,
-	const t_load_command_union lcu, t_macho_file *file)
-{
-	size_t						es;
-	struct segment_command_64	seg;
-
-	seg = lcu.segment_64;
-	es = lcd->sd.total_size + seg.nsects * sizeof(struct section_64);
-	if (es != (size_t)lcu.lc.cmdsize)
-		return (macho_error(file, VE_INVALID_SEGMENT_COUNT, DEBUG_TUPLE));
-	printf("valid segment (64): '%.16s'\n", lcu.segment_64.segname);
-	if (seg.fileoff >= file->mm.size)
-		return (macho_error(file, VE_INVALID_LOAD_COMMAND_IN_FILE_ADDR,
-			DEBUG_TUPLE));
-		if (seg.fileoff + seg.filesize > file->mm.size)
-		return (macho_error(file, VE_INVALID_LOAD_COMMAND_FILE_BLOCK_SIZE,
-			DEBUG_TUPLE));
-		return (vlc_sections_64(lcd, lcu, file));
-}
-
 static const t_load_command_descriptor	g_lcd[47] = {
 	{LC_SEGMENT, vlc_noop, {5, 1, sizeof(struct segment_command),
 			{{4, 2, 4, 1}, {1, 16, 1, 0}, {4, 4, 4, 1},
@@ -187,7 +153,7 @@ t_validator_error	validate_commands(t_macho_file *obj)
 	while (++it < obj->head.ncmds)
 	{
 		if (read_in_memory(&obj->mm, &lcu.lc, MM_CMD, MD_LOAD_COMMAND) != ME_OK)
-			return (obj->err = VE_ME_MASK | obj->mm.error);
+			return (obj->err = VE_ME_MASK | obj->mm.err);
 		obj->mm.cursor -= sizeof(struct load_command);
 		next = obj->mm.cursor + lcu.lc.cmdsize;
 		if (lcu.lc.cmdsize > 4096 || lcu.lc.cmdsize >= obj->mm.size
@@ -197,7 +163,7 @@ t_validator_error	validate_commands(t_macho_file *obj)
 				sizeof(t_load_command_descriptor), 0}, g_lcd, 0)) == (size_t)-1)
 			return (macho_error(obj, VE_INVALID_LOAD_COMMAND_ID, DEBUG_TUPLE));
 		if (read_struct_in_memory(&obj->mm, lcu.data, MM_CMD, g_lcd[cmd].sd))
-			return (obj->err = VE_ME_MASK | obj->mm.error);
+			return (obj->err = VE_ME_MASK | obj->mm.err);
 		if (g_lcd[cmd].vlc(&g_lcd[cmd], lcu, obj) != VE_OK)
 			return (obj->err);
 		obj->mm.cursor = next;

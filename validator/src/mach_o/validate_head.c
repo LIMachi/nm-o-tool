@@ -44,10 +44,10 @@ t_validator_error	validate_head_32(t_macho_file *obj)
 	{sizeof(cpu_subtype_t), 1, sizeof(cpu_subtype_t), 1}, {4, 4, 4, 1}}};
 	if (claim_map(&obj->mm, (t_memory_descriptor){sizeof(struct mach_header),
 			1, 1, 0}, MM_HEADER, 0) != ME_OK)
-		return (obj->err = VE_ME_MASK | obj->mm.error);
+		return (obj->err = VE_ME_MASK | obj->mm.err);
 	if (read_struct_in_memory(&obj->mm, &obj->head, MM_HEADER, sd_head_32)
 			!= ME_OK)
-		return (obj->err = VE_ME_MASK | obj->mm.error);
+		return (obj->err = VE_ME_MASK | obj->mm.err);
 	obj->head.reserved = 0;
 	return (validate_head_common(obj));
 }
@@ -60,10 +60,10 @@ t_validator_error	validate_head_64(t_macho_file *obj)
 
 	if (claim_map(&obj->mm, (t_memory_descriptor){sizeof(struct mach_header_64),
 			1, 1, 0}, MM_HEADER, 0) != ME_OK)
-		return (obj->err = VE_ME_MASK | obj->mm.error);
+		return (obj->err = VE_ME_MASK | obj->mm.err);
 	if (read_struct_in_memory(&obj->mm, &obj->head, MM_HEADER, sd_head_64)
 			!= ME_OK)
-		return (obj->err = VE_ME_MASK | obj->mm.error);
+		return (obj->err = VE_ME_MASK | obj->mm.err);
 	return (validate_head_common(obj));
 }
 
