@@ -21,6 +21,8 @@
 # include <mach-o/fat.h>
 # include <mach-o/nlist.h>
 # include <mach-o/swap.h>
+# include <mach-o/reloc.h>
+# include <mach-o/stab.h>
 
 # include <memory.h>
 
@@ -173,9 +175,27 @@ t_validator_error							validate_head(t_macho_file *obj);
 t_validator_error							validate_commands(
 															t_macho_file *obj);
 
-t_validator_error	vlc_sections_64(const t_load_command_descriptor *lcd,
-									 const t_load_command_union lcu, t_macho_file *file);
-t_validator_error	vlc_segment_64(const t_load_command_descriptor *lcd,
-									const t_load_command_union lcu, t_macho_file *file);
+t_validator_error							vlc_sections_64(
+	const t_load_command_descriptor *lcd,
+	const t_load_command_union lcu,
+	t_macho_file *file);
+t_validator_error							vlc_segment_64(
+	const t_load_command_descriptor *lcd,
+	const t_load_command_union lcu,
+	t_macho_file *file);
+
+t_validator_error							vlc_sections_32(
+	const t_load_command_descriptor *lcd,
+	const t_load_command_union lcu,
+	t_macho_file *file);
+t_validator_error							vlc_segment_32(
+	const t_load_command_descriptor *lcd,
+	const t_load_command_union lcu,
+	t_macho_file *file);
+
+t_validator_error							vlc_symtab(
+	const t_load_command_descriptor *lcd,
+	const t_load_command_union lcu,
+	t_macho_file *file);
 
 #endif

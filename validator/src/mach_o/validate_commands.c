@@ -27,7 +27,7 @@ t_validator_error	vlc_noop(const t_load_command_descriptor *lcd,
 }
 
 static const t_load_command_descriptor	g_lcd[47] = {
-	{LC_SEGMENT, vlc_noop, {5, 1, sizeof(struct segment_command),
+	{LC_SEGMENT, vlc_segment_32, {5, 1, sizeof(struct segment_command),
 			{{4, 2, 4, 1}, {1, 16, 1, 0}, {4, 4, 4, 1},
 				{sizeof(vm_prot_t), 2, sizeof(vm_prot_t), 1}, {4, 2, 4, 1}}}},
 	{LC_SEGMENT_64, vlc_segment_64, {5, 1, sizeof(struct segment_command_64),
@@ -84,7 +84,7 @@ static const t_load_command_descriptor	g_lcd[47] = {
 			{{4, 10, 4, 1}}}},
 	{LC_ROUTINES_64, vlc_noop, {2, 1, sizeof(struct routines_command_64),
 			{{4, 2, 4, 1}, {8, 8, 8, 1}}}},
-	{LC_SYMTAB, vlc_noop, {1, 1, sizeof(struct symtab_command),
+	{LC_SYMTAB, vlc_symtab, {1, 1, sizeof(struct symtab_command),
 			{{4, 6, 4, 1}}}},
 	{LC_DYSYMTAB, vlc_noop, {1, 1, sizeof(struct dysymtab_command),
 			{{4, 20, 4, 1}}}},

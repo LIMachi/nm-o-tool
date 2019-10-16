@@ -24,6 +24,7 @@ t_validator_error	vlc_sections_32(const t_load_command_descriptor *lcd,
 		{{16, 2, 1, 0}, {4, 10, 4, 1}}};
 	struct section		sec;
 
+	(void)lcd;
 	it = (size_t)-1;
 	id = file->vmm.biggest_id;
 	while (++it < lcu.segment_32.nsects)
