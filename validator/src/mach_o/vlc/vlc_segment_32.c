@@ -21,7 +21,7 @@ t_validator_error	vlc_sections_32(const t_load_command_descriptor *lcd,
 	size_t				h;
 	unsigned long long	id;
 	t_struct_descriptor	sd_sect32 = {2, 1, sizeof(struct section),
-		{{16, 2, 1, 0}, {4, 10, 4, 1}}};
+		{{16, 2, 1, 0}, {4, 9, 4, 1}}};
 	struct section		sec;
 
 	(void)lcd;

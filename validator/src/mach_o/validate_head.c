@@ -54,10 +54,11 @@ t_validator_error	validate_head_32(t_macho_file *obj)
 
 t_validator_error	validate_head_64(t_macho_file *obj)
 {
-	const t_struct_descriptor	sd_head_64 = {4, 1, sizeof(struct mach_header_64),
-		{{4, 1, 4, 0}, {sizeof(cpu_type_t), 1, sizeof(cpu_type_t), 1},
-		{sizeof(cpu_subtype_t), 1, sizeof(cpu_subtype_t), 1}, {4, 5, 4, 1}}};
+	const t_struct_descriptor	sd_head_64 = {4, 1,
 
+	sizeof(struct mach_header_64), {{4, 1, 4, 0}, {sizeof(cpu_type_t), 1,
+	sizeof(cpu_type_t), 1}, {sizeof(cpu_subtype_t), 1, sizeof(cpu_subtype_t),
+	1}, {4, 5, 4, 1}}};
 	if (claim_map(&obj->mm, (t_memory_descriptor){sizeof(struct mach_header_64),
 			1, 1, 0}, MM_HEADER, 0) != ME_OK)
 		return (obj->err = VE_ME_MASK | obj->mm.err);
