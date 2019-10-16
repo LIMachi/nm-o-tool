@@ -14,26 +14,24 @@
 #include <stdio.h>
 #include <string.h>
 
-t_validator_error	vlc_sections_64(const t_load_command_descriptor *lcd,
+t_validator_error	vlc_sections_32(const t_load_command_descriptor *lcd,
 									const t_load_command_union lcu, t_macho_file *file)
 {
 	size_t				it;
 	size_t				h;
 	unsigned long long	id;
-	t_struct_descriptor	sd_sect64 = {3, 1, sizeof(struct section_64),
-		{{16, 2, 1, 0}, {8, 2, 8, 1}, {4, 8, 4, 1}}};
-	struct section_64	sec;
+	t_struct_descriptor	sd_sect32 = {2, 1, sizeof(struct section),
+		{{16, 2, 1, 0}, {4, 10, 4, 1}}};
+	struct section		sec;
 
-	(void)lcd;
-	(void)file;
 	it = (size_t)-1;
 	id = file->vmm.biggest_id;
-	while (++it < lcu.segment_64.nsects)
+	while (++it < lcu.segment_32.nsects)
 	{
-		if (read_struct_in_memory(&file->mm, &sec, MM_CMD, sd_sect64) != ME_OK)
+		if (read_struct_in_memory(&file->mm, &sec, MM_CMD, sd_sect32) != ME_OK)
 			return (file->err = VE_ME_MASK | file->mm.err);
 		// sec.segname[15] = '\0';
-		printf("'%.16s' : sect64: '%.16s'\n", sec.segname, sec.sectname);
+		printf("'%.16s' : sect32: '%.16s'\n", sec.segname, sec.sectname);
 		// if (strcmp(sec.segname, lcu.segment_64.segname)) //warning only
 		// {
 			// return (macho_error(file, VE_MISMATCHED_SEGNAME, DEBUG_TUPLE));
@@ -60,18 +58,18 @@ t_validator_error	vlc_sections_64(const t_load_command_descriptor *lcd,
 	return (VE_OK);
 }
 
-t_validator_error	vlc_segment_64(const t_load_command_descriptor *lcd,
+t_validator_error	vlc_segment_32(const t_load_command_descriptor *lcd,
 									const t_load_command_union lcu, t_macho_file *file)
 {
 	size_t						es;
-	struct segment_command_64	seg;
+	struct segment_command		seg;
 
-	seg = lcu.segment_64;
-	((t_load_command_union)lcu).segment_64.segname[15] = '\0';
-	es = lcd->sd.total_size + seg.nsects * sizeof(struct section_64);
+	seg = lcu.segment_32;
+	((t_load_command_union)lcu).segment_32.segname[15] = '\0';
+	es = lcd->sd.total_size + seg.nsects * sizeof(struct section);
 	if (es != (size_t)lcu.lc.cmdsize)
 		return (macho_error(file, VE_INVALID_SEGMENT_COUNT, DEBUG_TUPLE));
-	printf("segment64: '%.16s'\n", lcu.segment_64.segname);
+	printf("segment32: '%.16s'\n", lcu.segment_64.segname);
 	if (vm_map_new_entry(&file->vmm, seg.vmaddr, seg.vmaddr + seg.vmsize,
 						 file->vmm.biggest_id + 1) != ME_OK)
 		return (file->err = VE_ME_MASK | file->vmm.err);
@@ -81,5 +79,5 @@ t_validator_error	vlc_segment_64(const t_load_command_descriptor *lcd,
 	if (seg.fileoff + seg.filesize > file->mm.size)
 		return (macho_error(file, VE_INVALID_LOAD_COMMAND_FILE_BLOCK_SIZE,
 							DEBUG_TUPLE));
-	return (vlc_sections_64(lcd, lcu, file));
+	return (vlc_sections_32(lcd, lcu, file));
 }

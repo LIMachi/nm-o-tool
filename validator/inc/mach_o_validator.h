@@ -66,8 +66,17 @@ typedef enum								e_memory_map_claim
 {
 	MM_BADLAND = 0xFF,
 	MM_PAD = 0x00,
-	MM_HEADER = 0x01,
-	MM_CMD = 0x2
+	MM_HEADER,
+	MM_CMD,
+	MM_SECTION,
+	MM_RELOCATION,
+	MM_SYMTAB,
+	MM_STRTAB,
+	MM_DYLIB,
+	MM_FUNC,
+	MM_DCE,
+	MM_DYSYMTAB,
+
 }											t_memory_map_claim;
 
 typedef enum								e_validator_error
