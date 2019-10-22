@@ -1,4 +1,5 @@
-include ../Makefiles/default_var.mk
 NAME := validator
-CFLAGS += -g
-include ../Makefiles/bin.mk
+validator_INC_DIR := inc
+validator_BLACK_LIST_SRCS := elf/
+include ../Makefiles/MK3/body.mk
+include ../Makefiles/MK3/footer.mk

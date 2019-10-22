@@ -25,14 +25,17 @@
 */
 
 #include <stdio.h>
+#include <errno.h>
+#include <string.h>
 
 t_memory_error	memory_error(t_memory_error *me, const t_memory_error err,
 	t_debug_tuple debug_tuple)
 {
 	if (err != ME_OK)
 		dprintf(2, "Caught error(%d) in memory manipulation, please set a break"
-			"point\nCaused by %s:%s:%d\n", err, debug_tuple.file,
-			debug_tuple.function, debug_tuple.line);
+			"point\nCaused by %s:%s:%d (%d: %s)\n", err, debug_tuple.file,
+			debug_tuple.function, debug_tuple.line, errno,
+			errno ? strerror(errno) : "Library error");
 	if (me != NULL)
 		*me = err;
 	return (err);

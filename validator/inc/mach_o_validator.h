@@ -14,15 +14,30 @@
 # define MACH_O_VALIDATOR_H
 
 /*
-** macho headers
+** archive headers (<common_path>/usr/include)
+*/
+
+# include <ar.h>
+
+/*
+** fat/universal headers (<common_path>/usr/include)
+*/
+
+# include <mach-o/fat.h>
+
+/*
+** macho headers (<common_path>/usr/include)
 */
 
 # include <mach-o/loader.h>
-# include <mach-o/fat.h>
 # include <mach-o/nlist.h>
 # include <mach-o/swap.h>
 # include <mach-o/reloc.h>
 # include <mach-o/stab.h>
+
+/*
+** local headers (<project_root>/inc)
+*/
 
 # include <memory.h>
 
@@ -85,8 +100,7 @@ typedef enum								e_validator_error
 {
 	VE_OK = 0,
 	VE_ME_MASK = 0x80000000,
-	VE_INVALID_MAGIC_NUMBER,
-	VE_INVALID_TYPE,
+	VE_INVALID_MAGIC_NUMBER = 1,
 	VE_INVALID_SEGMENT_COUNT,
 	VE_INVALID_CPU_TYPE,
 	VE_INVALID_FILE_TYPE,
@@ -95,8 +109,7 @@ typedef enum								e_validator_error
 	VE_INVALID_COMMAND_SIZE,
 	VE_INVALID_LOAD_COMMAND_IN_FILE_ADDR,
 	VE_INVALID_LOAD_COMMAND_FILE_BLOCK_SIZE,
-	VE_INVALID_LOAD_COMMAND_ID,
-	VE_MISMATCHED_SEGNAME
+	VE_INVALID_LOAD_COMMAND_ID
 }											t_validator_error;
 
 typedef struct								s_macho_file

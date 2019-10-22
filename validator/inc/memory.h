@@ -15,6 +15,8 @@
 
 # include <stdlib.h>
 
+# include <sys/mman.h>
+
 /*
 ** block_size
 ** nb_blocks
@@ -132,6 +134,9 @@ typedef struct	s_debug_tuple
 # define MD_CHAR16 ((t_memory_descriptor){1, 16, 1, 0})
 
 # define MD_LOAD_COMMAND ((t_memory_descriptor){4, 2, 4, 1})
+
+t_memory_error	memory_map_clear(t_memory_map *mm);
+t_memory_error	memory_unmap(t_memory_map *mm);
 
 /*
 ** t_memory_error    memory_error(t_memory_map *mm,
