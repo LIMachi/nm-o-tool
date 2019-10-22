@@ -56,3 +56,4 @@ ft_otool
 cmake-build-debug
 .DS_Store
 .makefile_files
+build
