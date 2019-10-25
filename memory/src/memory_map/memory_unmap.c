@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   unclaim_map.c                                      :+:      :+:    :+:   */
+/*   memory_unmap.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -12,27 +12,12 @@
 
 #include <memory.h>
 
-t_memory_error	unclaim_map(t_memory_map *mm, const t_memory_descriptor md,
-							uint8_t claim, int jump)
+t_memory_error	memory_unmap(t_memory_map *mm)
 {
-	size_t	align;
-	size_t	it;
-	size_t	sw;
-
-	if (mm->err != ME_OK || valid_cursor(mm, md, &align) != ME_OK)
-		return (mm->err);
-	it = (size_t)-1;
-	while (++it < md.nb_blocks)
-	{
-		sw = (size_t)-1;
-		while (++sw < md.block_size)
-			if (mm->map[mm->cursor + align * it + sw] != claim)
-				return (memory_error(&mm->err, ME_INVALID_UNCLAIM,
-					DEBUG_TUPLE));
-			else
-				mm->map[mm->cursor + align * it + sw] = 0;
-	}
-	if (jump)
-		mm->cursor += align * md.nb_blocks;
+	if (get_error()->error != ME_OK)
+		return (ME_PENDING_ERROR);
+	if (mm->ptr != MAP_FAILED && mm->ptr != NULL)
+		munmap(mm->ptr, mm->size);
+	memory_map_clear(mm);
 	return (ME_OK);
 }

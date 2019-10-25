@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   unclaim_map.c                                      :+:      :+:    :+:   */
+/*   error.h                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -10,29 +10,24 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <memory.h>
+#ifndef ERROR_H
+# define ERROR_H
 
-t_memory_error	unclaim_map(t_memory_map *mm, const t_memory_descriptor md,
-							uint8_t claim, int jump)
+# ifndef DEBUG
+#  define DEBUG 0
+# endif
+
+typedef struct	s_error_tuple
 {
-	size_t	align;
-	size_t	it;
-	size_t	sw;
+	int			error;
+	char		*file;
+	char		*function;
+	int			line;
+}				t_error_tuple;
 
-	if (mm->err != ME_OK || valid_cursor(mm, md, &align) != ME_OK)
-		return (mm->err);
-	it = (size_t)-1;
-	while (++it < md.nb_blocks)
-	{
-		sw = (size_t)-1;
-		while (++sw < md.block_size)
-			if (mm->map[mm->cursor + align * it + sw] != claim)
-				return (memory_error(&mm->err, ME_INVALID_UNCLAIM,
-					DEBUG_TUPLE));
-			else
-				mm->map[mm->cursor + align * it + sw] = 0;
-	}
-	if (jump)
-		mm->cursor += align * md.nb_blocks;
-	return (ME_OK);
-}
+t_error_tuple	*get_error(void);
+int				set_error(int error, char *file, char *function, int line);
+
+# define ERROR_TUPLE __FILE__, (char*)__FUNCTION__, __LINE__
+
+#endif

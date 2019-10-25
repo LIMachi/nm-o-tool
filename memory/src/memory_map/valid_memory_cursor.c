@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   unclaim_map.c                                      :+:      :+:    :+:   */
+/*   valid_memory_cursor.c                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -12,27 +12,26 @@
 
 #include <memory.h>
 
-t_memory_error	unclaim_map(t_memory_map *mm, const t_memory_descriptor md,
-							uint8_t claim, int jump)
+t_memory_error	valid_cursor(t_memory_map *mm,
+							const t_memory_descriptor md,
+							size_t *align)
 {
-	size_t	align;
-	size_t	it;
-	size_t	sw;
+	size_t	tmp;
 
-	if (mm->err != ME_OK || valid_cursor(mm, md, &align) != ME_OK)
-		return (mm->err);
-	it = (size_t)-1;
-	while (++it < md.nb_blocks)
-	{
-		sw = (size_t)-1;
-		while (++sw < md.block_size)
-			if (mm->map[mm->cursor + align * it + sw] != claim)
-				return (memory_error(&mm->err, ME_INVALID_UNCLAIM,
-					DEBUG_TUPLE));
-			else
-				mm->map[mm->cursor + align * it + sw] = 0;
-	}
-	if (jump)
-		mm->cursor += align * md.nb_blocks;
+	if (get_error()->error != ME_OK)
+		return (ME_PENDING_ERROR);
+	if (align == NULL)
+		align = &tmp;
+	if (mm->cursor >= mm->size)
+		return (set_error(ME_OUTSIDE_MAPPING, ERROR_TUPLE));
+	if ((*align = md.block_size % md.align))
+		*align = md.block_size + md.align - *align;
+	else
+		*align = md.block_size > md.align ? md.block_size : md.align;
+	if (mm->cursor + *align < mm->cursor || mm->cursor + *align >= mm->size)
+		return (set_error(ME_INVALID_BLOC_SIZE, ERROR_TUPLE));
+	if (md.nb_blocks && (md.nb_blocks * *align < md.nb_blocks
+						|| md.nb_blocks * *align < *align))
+		return (set_error(ME_INVALID_BLOC_COUNT, ERROR_TUPLE));
 	return (ME_OK);
 }

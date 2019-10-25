@@ -13,31 +13,28 @@
 #include <memory.h>
 
 t_memory_error	read_in_memory(t_memory_map *mm, void *buffer,
-							const uint8_t exmap, const t_memory_descriptor md)
+	const t_memory_descriptor md, const uint32_t endian)
 {
 	size_t			align;
 	size_t			it;
 	size_t			sw;
 
-	if (mm->err != ME_OK || valid_cursor(mm, md, &align) != ME_OK)
-		return (mm->err);
+	if (get_error()->error != ME_OK || valid_cursor(mm, md, &align) != ME_OK)
+		return (ME_PENDING_ERROR);
 	it = (size_t)-1;
-	while (++it < md.nb_blocks && (sw = (size_t)-1))
-	{
-		while (++sw < align)
-			if (exmap != 0xFF && mm->map[mm->cursor + it * align + sw] != exmap)
-				return (memory_error(&mm->err, ME_INVALID_MAPPING,
-					DEBUG_TUPLE));
-				if (buffer == NULL || !(sw = (size_t)-1))
-			continue ;
-		while (++sw < align)
-			if (md.should_swap && mm->swap && sw < md.block_size)
-				((uint8_t*)buffer)[it * align + sw] = mm->ptr[mm->cursor
-					+ it * align + md.block_size - sw - 1];
+	if (buffer != NULL)
+		while (++it < md.nb_blocks)
+		{
+			sw = (size_t)-1;
+			if (md.endian && md.endian != endian)
+				while (++sw < md.block_size)
+					((uint8_t*)buffer)[it * align + sw] = mm->ptr[mm->cursor
+						+ it * align + md.block_size - sw - 1];
 			else
-				((uint8_t*)buffer)[it * align + sw] = mm->ptr[mm->cursor
-					+ it * align + sw];
-	}
+				while (++sw < md.block_size)
+					((uint8_t*)buffer)[it * align + sw] = mm->ptr[mm->cursor
+						+ it * align + sw];
+		}
 	mm->cursor += align * md.nb_blocks;
 	return (ME_OK);
 }

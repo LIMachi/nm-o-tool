@@ -19,12 +19,15 @@ t_memory_error	read_struct_in_memory(t_memory_map *mm, void *buffer,
 	size_t	t;
 	size_t	c;
 
+	if (mm->err != ME_OK)
+		return (mm->err);
 	it = (size_t)-1;
 	c = 0;
 	while (++it < sd.nb_members)
 	{
 		t = mm->cursor;
-		if (read_in_memory(mm, &buffer[c], mapping, sd.member[it]) != ME_OK)
+		if (read_in_memory(mm, buffer != NULL ? &buffer[c] : NULL, mapping,
+				sd.member[it]) != ME_OK)
 			return (mm->err);
 		t = mm->cursor - t;
 		c += t;

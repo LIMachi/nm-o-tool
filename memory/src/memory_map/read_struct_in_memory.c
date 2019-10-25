@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   unclaim_map.c                                      :+:      :+:    :+:   */
+/*   read_struct_in_memory.c                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -12,27 +12,31 @@
 
 #include <memory.h>
 
-t_memory_error	unclaim_map(t_memory_map *mm, const t_memory_descriptor md,
-							uint8_t claim, int jump)
+t_memory_error	read_struct_in_memory(t_memory_map *mm, void *buffer,
+	const t_struct_descriptor sd, uint32_t endian)
 {
-	size_t	align;
 	size_t	it;
-	size_t	sw;
+	size_t	t;
+	size_t	c;
 
-	if (mm->err != ME_OK || valid_cursor(mm, md, &align) != ME_OK)
-		return (mm->err);
+	if (get_error()->error != ME_OK)
+		return (ME_PENDING_ERROR);
 	it = (size_t)-1;
-	while (++it < md.nb_blocks)
+	c = 0;
+	while (++it < sd.nb_members)
 	{
-		sw = (size_t)-1;
-		while (++sw < md.block_size)
-			if (mm->map[mm->cursor + align * it + sw] != claim)
-				return (memory_error(&mm->err, ME_INVALID_UNCLAIM,
-					DEBUG_TUPLE));
-			else
-				mm->map[mm->cursor + align * it + sw] = 0;
+		t = mm->cursor;
+		if (read_in_memory(mm, buffer != NULL ? &buffer[c] : NULL,
+				sd.member[it], endian) != ME_OK)
+			return (ME_PENDING_ERROR);
+		t = mm->cursor - t;
+		c += t;
+		if (t % sd.align)
+		{
+			t = sd.align - (t % sd.align);
+			mm->cursor += t;
+			c += t;
+		}
 	}
-	if (jump)
-		mm->cursor += align * md.nb_blocks;
 	return (ME_OK);
 }

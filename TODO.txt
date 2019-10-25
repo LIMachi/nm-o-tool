@@ -1,0 +1,2 @@
+important: faire la fonction map from map (pour les fat/archives), revoir le validateur de fat, faire le validateur d'archives
+facultatif: fonctions de cast d'array/structures

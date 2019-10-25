@@ -22,7 +22,7 @@
 ** validate a single macho (object/executable) file using his map
 */
 
-t_validator_error	validate_macho(t_memory_map *mm, uint8_t type)
+t_validator_error	validate_macho(t_memory_map *mm, uint8_t type, uint8_t map)
 {
 	t_macho_file	obj;
 
@@ -67,10 +67,46 @@ uint8_t		mm_file_type(t_memory_map *mm)
 	return (8);
 }
 
+t_validator_error	validate_macho_map(t_memory_map *mm, uint8_t map);
+
 t_validator_error	validate_macho_fat(t_memory_map *mm, uint8_t type)
 {
-	(void)mm;
-	(void)type;
+	uint32_t			nfat;
+	uint32_t			it;
+	size_t				cur;
+	struct fat_arch_64	fat;
+	uint8_t				stype;
+	t_validator_error	err;
+
+	mm->swap = (type & 0b10) == 0b10;
+	if (claim_map(mm, (t_memory_descriptor){4, 2, 4, 0}, MM_FAT, 0) != ME_OK)
+		return (VE_ME_MASK | mm->err);
+	mm->cursor += 4;
+	if (read_in_memory(mm, &nfat, MM_FAT, (t_memory_descriptor){4, 1, 4, 1}) != ME_OK)
+		return (VE_ME_MASK | mm->err);
+	printf("nfat: %d (lw: %s)\n", nfat, (type & 1) ? "32" : "64");
+	claim_map(mm, (t_memory_descriptor){(type & 1) ? sizeof(struct fat_arch) : sizeof(struct fat_arch_64), nfat, 1, 0}, MM_FAT_ARCH, 0);
+	it = (uint32_t)-1;
+	while (++it < nfat)
+	{
+		read_struct_in_memory(mm, &fat, MM_FAT_ARCH, (t_struct_descriptor){3, 1, sizeof(cpu_type_t) + sizeof(cpu_subtype_t) + ((type & 1) ? 4 : 8), {{sizeof(cpu_type_t), 1, 1, 1}, {sizeof(cpu_subtype_t), 1, 1, 1}, {type & 1 ? 4 : 8, 1, 1, 1}}});
+		read_in_memory(mm, &fat.size, MM_FAT_ARCH, (t_memory_descriptor){type & 1 ? 4 : 8, 1, 1, 1});
+		read_in_memory(mm, &fat.align, MM_FAT_ARCH, (t_memory_descriptor){4, type & 1 ? 1 : 2, 1, 1});
+		if (mm->err != ME_OK)
+			return (VE_ME_MASK | mm->err);
+		if (type & 1)
+		{
+			fat.offset = *(uint32_t *)&fat.offset;
+			fat.size   = *(uint32_t *)&fat.size;
+		}
+		printf("offset: %llu, size: %llu, align: %d\n", fat.offset, fat.size, 1 << fat.align);
+		cur = mm->cursor;
+		mm->cursor = fat.offset;
+		claim_map(mm, (t_memory_descriptor){fat.size, 1, 1 << fat.align, 0}, -2 - it, 0);
+		if ((err = validate_macho_map(mm, -2 - it)) != VE_OK)
+			return (err);
+		mm->cursor = cur;
+	}
 	return (VE_OK);
 }
 
@@ -80,7 +116,7 @@ t_validator_error	validate_macho_archive(t_memory_map *mm)
 	return (VE_OK);
 }
 
-t_validator_error	validate_macho_map(t_memory_map *mm)
+t_validator_error	validate_macho_map(t_memory_map *mm, uint8_t map)
 {
 	uint8_t			type;
 
@@ -91,7 +127,7 @@ t_validator_error	validate_macho_map(t_memory_map *mm)
 	else if (type & 4)
 		return (validate_macho_fat(mm, type));
 	else
-		return (validate_macho(mm, type));
+		return (validate_macho(mm, type, map));
 	return (VE_INVALID_MAGIC_NUMBER);
 }
 
@@ -118,7 +154,7 @@ int					main(int argc, char *argv[])
 			printf("%s: %s: %s\n", argv[0], argv[i], strerror(errno));
 			return (mm.err);
 		}
-		if (validate_macho_map(&mm) != ME_OK)
+		if (validate_macho_map(&mm, MM_PAD) != ME_OK)
 			return (mm.err);
 		memory_unmap(&mm);
 	}

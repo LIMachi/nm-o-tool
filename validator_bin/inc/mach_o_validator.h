@@ -83,6 +83,9 @@ typedef enum								e_memory_map_claim
 {
 	MM_BADLAND = 0xFF,
 	MM_PAD = 0x00,
+	MM_FAT,
+	MM_FAT_ARCH,
+	MM_AR,
 	MM_HEADER,
 	MM_CMD,
 	MM_SECTION,
@@ -93,7 +96,6 @@ typedef enum								e_memory_map_claim
 	MM_FUNC,
 	MM_DCE,
 	MM_DYSYMTAB,
-
 }											t_memory_map_claim;
 
 typedef enum								e_validator_error
@@ -163,6 +165,12 @@ typedef struct								s_load_command_element
 	uint8_t		size;
 	uint8_t		swap;
 }											t_load_command_element;
+
+typedef union								u_u32_u64
+{
+	uint32_t	u32;
+	uint64_t	u64;
+}											t_u32_u64;
 
 typedef struct s_load_command_descriptor	t_load_command_descriptor;
 

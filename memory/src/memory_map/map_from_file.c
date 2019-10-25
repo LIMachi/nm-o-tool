@@ -47,26 +47,18 @@ t_memory_error	memory_map_from_file(t_memory_map *mm,
 	struct stat	sb;
 	int			fd;
 
-	if (mm->err != ME_OK)
-		return (mm->err);
+	if (get_error()->error != ME_OK)
+		return (ME_PENDING_ERROR);
 	if ((fd = open(path, O_RDONLY)) == -1)
-		return (memory_error(&mm->err, ME_COULD_NOT_OPEN_FILE, DEBUG_TUPLE));
+		return (set_error(ME_COULD_NOT_OPEN_FILE, ERROR_TUPLE));
 	if (fstat(fd, &sb))
 		return ((close(fd) & 0)
-			| memory_error(&mm->err, ME_COULD_NOT_STAT_FILE, DEBUG_TUPLE));
-		mm->size = (size_t)sb.st_size;
+			| set_error(ME_COULD_NOT_STAT_FILE, ERROR_TUPLE));
+	mm->size = (size_t)sb.st_size;
 	mm->ptr = mmap(NULL, mm->size, PROT_READ, MAP_PRIVATE, fd, 0);
 	close(fd);
 	if (mm->ptr == MAP_FAILED)
-		return (memory_error(&mm->err, ME_MAPPING_FAILED, DEBUG_TUPLE));
-	mm->map = mmap(NULL, mm->size, PROT_READ | PROT_WRITE,
-		MAP_ANON | MAP_PRIVATE, -1, 0);
-	if (mm->map == MAP_FAILED)
-		return ((munmap(mm->ptr, mm->size) & 0)
-			| memory_error(&mm->err, ME_MAPPING_FAILED, DEBUG_TUPLE));
-		fd = -1;
-	while (++fd < (int)mm->size)
-		mm->map[fd] = 0;
-	*mm = (t_memory_map){0, mm->size, 0, ME_OK, mm->ptr, mm->map};
+		return (set_error(ME_MAPPING_FAILED, ERROR_TUPLE));
+	*mm = (t_memory_map){mm->size, 0, mm->ptr};
 	return (ME_OK);
 }

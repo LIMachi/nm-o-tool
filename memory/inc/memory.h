@@ -14,8 +14,23 @@
 # define MEMORY_H
 
 # include <stdlib.h>
-
 # include <sys/mman.h>
+
+# include <error.h>
+# include <vm.h>
+
+typedef enum	e_memory_error
+{
+	ME_OK = VME_OK,
+	ME_PENDING_ERROR = VME_PENDING_ERROR,
+	ME_INVALID_BLOC_SIZE = LAST_VM_ERROR_DEFINITION,
+	ME_INVALID_BLOC_COUNT,
+	ME_COULD_NOT_OPEN_FILE,
+	ME_COULD_NOT_STAT_FILE,
+	ME_MAPPING_FAILED,
+	ME_OUTSIDE_MAPPING,
+	LAST_MEMORY_ERROR_DEFINITION
+}				t_memory_error;
 
 /*
 ** All functions (using *mm as the first parameter) can be chained without check
@@ -31,7 +46,10 @@
 ** block_size
 ** nb_blocks
 ** align        how the cursor must be aligned after accessing each block
-** should_swap  if t_memory_map.swap then swap bytes in each block
+** endian       used to know how the memory should be reduced/expanded/copied
+**    endian values: 0123 (little)
+**                   3210 (big)
+**                   0000 (do not swap)
 ** -
 ** example:
 ** given a string of 16 chars:
@@ -45,7 +63,7 @@ typedef struct	s_memory_descriptor
 	uint32_t	block_size;
 	uint32_t	nb_blocks;
 	uint32_t	align;
-	uint32_t	should_swap;
+	uint32_t	endian;
 }				t_memory_descriptor;
 
 /*
@@ -180,20 +198,6 @@ typedef struct	s_type_descriptor
 	union u_type_descriptor	dscr;
 }				t_type_descriptor;
 
-typedef enum	e_memory_error
-{
-	ME_OK = 0,
-	ME_INVALID_MAPPING,
-	ME_OUTSIDE_MAPPING,
-	ME_MAPPING_FAILED,
-	ME_INVALID_BLOC_SIZE,
-	ME_INVALID_BLOC_COUNT,
-	ME_COULD_NOT_OPEN_FILE,
-	ME_COULD_NOT_STAT_FILE,
-	ME_INVALID_CLAIM,
-	ME_INVALID_UNCLAIM
-}				t_memory_error;
-
 /*
 ** swap    if TRUE, then will apply an endian swap if needed on reading/writing
 ** size    total size of this memory_map
@@ -206,58 +210,13 @@ typedef enum	e_memory_error
 
 typedef struct	s_memory_map
 {
-	int				swap;
 	size_t			size;
 	size_t			cursor;
-	t_memory_error	err;
 	uint8_t			*ptr;
-	uint8_t			*map;
 }				t_memory_map;
-
-typedef struct	s_vm_map_entry
-{
-	unsigned long long	id;
-	size_t				start;
-	size_t				finish;
-}				t_vm_map_entry;
-
-typedef struct	s_vm_map
-{
-	size_t				total_size;
-	unsigned long long	biggest_id;
-	size_t				nb_entries;
-	t_memory_error		err;
-	t_vm_map_entry		*entries;
-}				t_vm_map;
-
-typedef struct	s_debug_tuple
-{
-	char		*file;
-	char		*function;
-	int			line;
-}				t_debug_tuple;
-
-# define DEBUG_TUPLE ((t_debug_tuple){__FILE__, (char*)__FUNCTION__, __LINE__})
-# define MD_UINT32 ((t_memory_descriptor){4, 1, 4, 1})
-# define MD_UINT64 ((t_memory_descriptor){8, 1, 8, 1})
-# define MD_CHAR16 ((t_memory_descriptor){1, 16, 1, 0})
-
-# define MD_LOAD_COMMAND ((t_memory_descriptor){4, 2, 4, 1})
 
 t_memory_error	memory_map_clear(t_memory_map *mm);
 t_memory_error	memory_unmap(t_memory_map *mm);
-
-/*
-** t_memory_error    memory_error(t_memory_map *mm,
-**                                t_memory_error err,
-**                                t_debug_tuple debug_tuple):
-** set error in mm, operation mainly used to catch thrown errors in LLDB/GDB,
-** use DEBUG_TUPLE as the third arg
-*/
-
-t_memory_error	memory_error(t_memory_error *me,
-							const t_memory_error err,
-							t_debug_tuple debug_tuple);
 
 t_memory_error	memory_map_from_file(t_memory_map *mm,
 									const char *path);
@@ -285,32 +244,30 @@ t_memory_error	valid_cursor(t_memory_map *mm,
 /*
 ** t_memory_error    read_in_memory(t_memory_map *mm,
 **                                  void *buffer,
-**                                  const uint8_t mapping,
-**                                  const t_memory_descriptor md):
+**                                  const t_memory_descriptor md,
+**                                  const int swap):
 ** copies memory (mm) mm at position/restriction (mapping/mm.cursor) in (buffer)
-**   using (md)
-** mapping 0 is free/non-mapped memory
-** mapping -1 (0xFF) is ignored mapping
+**   using (md), eventually using an endian (swap)
 */
 
 t_memory_error	read_in_memory(t_memory_map *mm,
 								void *buffer,
-								const uint8_t mapping,
-								const t_memory_descriptor md);
+								const t_memory_descriptor md,
+								const uint32_t endian);
 
 /*
 ** t_memory_error    read_struct_in_memory(t_memory_map *mm,
 **                                         void *buffer,
-**                                         const uint8_t mapping,
-**                                         const t_struct_descriptor sd):
+**                                         const t_struct_descriptor sd,
+**                                         const int swap):
 ** similar to read_in_memory, retrieve memory from mm, but uses a structure
 ** descriptor instead of a memory descriptor
 */
 
 t_memory_error	read_struct_in_memory(t_memory_map *mm,
 										void *buffer,
-										const uint8_t mapping,
-										const t_struct_descriptor sd);
+										const t_struct_descriptor sd,
+										const uint32_t endian);
 
 /*
 ** 'search' is a single block to find in 'mem' (which is described by 'md')
@@ -323,34 +280,6 @@ t_memory_error	read_struct_in_memory(t_memory_map *mm,
 size_t			in(const void *search,
 					const t_memory_descriptor md,
 					const void *mem,
-					const int should_swap);
-
-t_memory_error	claim_map(t_memory_map *mm, const t_memory_descriptor md,
-							uint8_t claim, int jump);
-t_memory_error	unclaim_map(t_memory_map *mm, const t_memory_descriptor md,
-							uint8_t claim, int jump);
-
-/*
-** try to insert a new vm entry, if there is a potential overlap, return
-** ME_INVALID_MAPPING and on memory error return ME_MAPPING_FAILED
-** return ME_OK on success
-*/
-
-t_memory_error	vm_map_new_entry(t_vm_map *vmm, size_t start, size_t finish,
-									unsigned long long id);
-
-/*
-** try to create a new entry over a previous entry (the previous entry should
-** contain the entirety of the new entry), the size of the original entry will
-** change, and if the new is not at the start or end of the old entry, the old
-** entry will be duplicated to englobe the new entry
-** return ME_OUTSIDE_MAPPING if the new is not contained in the old
-** return ME_INVALID_MAPPING if the original_id does not exist
-** return ME_MAPPING_FAILED on allocation/insertion error
-** return ME_OK on success
-*/
-
-t_memory_error	vm_map_recut_entry(t_vm_map *vmm, t_vm_map_entry new,
-									unsigned long long original_id);
+					const uint32_t endian);
 
 #endif

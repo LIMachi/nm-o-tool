@@ -19,7 +19,7 @@ t_memory_error	claim_map(t_memory_map *mm, const t_memory_descriptor md,
 	size_t	it;
 	size_t	sw;
 
-	if (valid_cursor(mm, md, &align) != ME_OK)
+	if (mm->err != ME_OK || valid_cursor(mm, md, &align) != ME_OK)
 		return (mm->err);
 	it = (size_t)-1;
 	while (++it < md.nb_blocks)

@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   unclaim_map.c                                      :+:      :+:    :+:   */
+/*   in.c                                               :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -12,27 +12,32 @@
 
 #include <memory.h>
 
-t_memory_error	unclaim_map(t_memory_map *mm, const t_memory_descriptor md,
-							uint8_t claim, int jump)
+size_t	in(const void *search, const t_memory_descriptor md,
+	const void *mem, const uint32_t endian)
 {
-	size_t	align;
 	size_t	it;
 	size_t	sw;
+	size_t	align;
 
-	if (mm->err != ME_OK || valid_cursor(mm, md, &align) != ME_OK)
-		return (mm->err);
+	if ((align = md.block_size % md.align))
+		align = md.block_size + md.align - align;
+	else
+		align = md.block_size > md.align ? md.block_size : md.align;
 	it = (size_t)-1;
 	while (++it < md.nb_blocks)
 	{
 		sw = (size_t)-1;
 		while (++sw < md.block_size)
-			if (mm->map[mm->cursor + align * it + sw] != claim)
-				return (memory_error(&mm->err, ME_INVALID_UNCLAIM,
-					DEBUG_TUPLE));
-			else
-				mm->map[mm->cursor + align * it + sw] = 0;
+			if (md.endian && md.endian != endian)
+			{
+				if (((uint8_t*)search)[sw]
+						!= ((uint8_t*)mem)[it * align + md.block_size - sw])
+					break ;
+			}
+			else if (((uint8_t*)search)[sw] != ((uint8_t*)mem)[it * align + sw])
+				break ;
+		if (sw == md.block_size)
+			return (it);
 	}
-	if (jump)
-		mm->cursor += align * md.nb_blocks;
-	return (ME_OK);
+	return ((size_t)-1);
 }

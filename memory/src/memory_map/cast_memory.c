@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   unclaim_map.c                                      :+:      :+:    :+:   */
+/*   cast_memory.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -12,27 +12,34 @@
 
 #include <memory.h>
 
-t_memory_error	unclaim_map(t_memory_map *mm, const t_memory_descriptor md,
-							uint8_t claim, int jump)
+t_memory_error	cast_memory(t_memory_map *out, t_memory_map *in,
+	t_cast_memory_descriptor cmd)
 {
-	size_t	align;
+	size_t	cur_out;
+	size_t	aling_in;
+	size_t	aling_out;
 	size_t	it;
 	size_t	sw;
 
-	if (mm->err != ME_OK || valid_cursor(mm, md, &align) != ME_OK)
-		return (mm->err);
-	it = (size_t)-1;
-	while (++it < md.nb_blocks)
+	if (valid_cursor(in, cmd.in, &aling_in) != ME_OK)
+		return (ME_PENDING_ERROR);
+	cur_out = out->cursor;
+	if (cmd.delta != CTD_VOID)
+		out->cursor += cmd.delta;
+	if (valid_cursor(out, cmd.out, &aling_out) != ME_OK)
 	{
-		sw = (size_t)-1;
-		while (++sw < md.block_size)
-			if (mm->map[mm->cursor + align * it + sw] != claim)
-				return (memory_error(&mm->err, ME_INVALID_UNCLAIM,
-					DEBUG_TUPLE));
-			else
-				mm->map[mm->cursor + align * it + sw] = 0;
+			out->cursor = cur_out;
+			return (ME_PENDING_ERROR);
 	}
-	if (jump)
-		mm->cursor += align * md.nb_blocks;
-	return (ME_OK);
+	it = 0;
+	if (cmd.delta != CTD_VOID)
+		while (it < cmd.in.nb_blocks && it < cmd.out.nb_blocks)
+		{
+			sw = 0;
+			if (cmd.in.endian && cmd.out.endian && cmd.in.endian != cmd.out.endian)
+			{
+
+			}
+		}
 }
+

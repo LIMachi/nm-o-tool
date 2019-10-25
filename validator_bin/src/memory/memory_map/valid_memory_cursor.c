@@ -18,6 +18,8 @@ t_memory_error	valid_cursor(t_memory_map *mm,
 {
 	size_t	tmp;
 
+	if (mm->err != ME_OK)
+		return (mm->err);
 	if (align == NULL)
 		align = &tmp;
 	if (mm->cursor >= mm->size)

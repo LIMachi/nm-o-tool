@@ -14,6 +14,8 @@
 
 t_memory_error	memory_unmap(t_memory_map *mm)
 {
+	if (mm->err != ME_OK)
+		return (mm->err);
 	if (mm->ptr != MAP_FAILED && mm->ptr != NULL)
 		munmap(mm->ptr, mm->size);
 	if (mm->map != MAP_FAILED && mm->map != NULL)
