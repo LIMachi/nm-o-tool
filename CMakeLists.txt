@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.12)
+project(mem_test)
+set(CMAKE_CXX_STANDARD 14)
+include_directories(inc memory/inc /usr/local/include /usr/lib/llvm-3.8/bin/../lib/clang/3.8.0/include /usr/include/x86_64-linux-gnu /usr/include)
+add_library(mem_test  memory/test.c)
