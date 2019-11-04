@@ -43,14 +43,13 @@ typedef enum	e_memory_error
 
 /*
 ** sizeof(t_memory_descriptor): 16
-** block_size
-** nb_blocks
-** align        how the cursor must be aligned after accessing each block
-** endian       used to know how the memory should be reduced/expanded/copied
-**    endian values: 0123 (little)
-**                   3210 (big)
-**                   0000 (do not swap)
 ** -
+** uint32_t block_size
+** uint32_t nb_blocks
+** uint32_t align      how the cursor must be aligned after accessing each block
+** uint32_t endian : 1 (true: big, false: little)
+** uint32_t sign : 1   (true: signed, false: unsigned)
+** -----------------------------------------------------------------------------
 ** example:
 ** given a string of 16 chars:
 ** (t_memory_descriptor){1, 16, 1, 0} or (t_memory_descriptor){16, 1, 1, 0}
@@ -63,15 +62,18 @@ typedef struct	s_memory_descriptor
 	uint32_t	block_size;
 	uint32_t	nb_blocks;
 	uint32_t	align;
-	uint32_t	endian;
+	uint32_t	endian : 1;
+	uint32_t	sign : 1;
 }				t_memory_descriptor;
 
 /*
 ** sizeof(t_struct_descriptor): 528
-** nb_members  how many t_memory_descriptor there are
-** align       how the cursor must be aligned after accessing each member
-** total_size  sum of all the member size (aligned)
-** member[32]  up to 32 t_memory_descriptors
+** -
+** uint32_t            nb_members  how many t_memory_descriptor there are
+** uint32_t            align       how the cursor must be aligned after
+**                                 accessing each member
+** uint64_t            total_size  sum of all the member size (aligned)
+** t_memory_descriptor member[32]  up to 32 t_memory_descriptors
 ** -----------------------------------------------------------------------------
 ** example:
 ** struct section {
@@ -102,6 +104,11 @@ typedef struct	s_struct_descriptor
 
 /*
 ** sizeof(t_cast_memory_descriptor): 40
+** -
+** t_memory_descriptor in
+** t_memory_descriptor out
+** int64_t             delta
+** -
 ** Perform resize, alignements and swap from one buffer to another using two
 ** t_cast_memory_descriptor
 ** 'delta' is used to move the blocks from their original position, 0x80000000
@@ -121,6 +128,15 @@ typedef struct	s_cast_memory_descriptor
 
 /*
 ** sizeof(t_cast_struct_descriptor): 1312
+** -
+** uint32_t                 nb_members
+** uint32_t                 swap
+** uint32_t                 align_in
+** uint32_t                 align_out
+** uint64_t                 total_size_in
+** uint64_t                 total_size_out
+** t_cast_memory_descriptor members[32]
+** -
 ** perform a series of t_cast_type_descriptor on one buffer to the other,
 ** see example below
 */
@@ -199,13 +215,9 @@ typedef struct	s_type_descriptor
 }				t_type_descriptor;
 
 /*
-** swap    if TRUE, then will apply an endian swap if needed on reading/writing
-** size    total size of this memory_map
-** cursor  actual position of the reader/writer
-** error   last error caught
-** ptr     pointer to the actual data
-** map     pointer to a map, each byte having a flag to tell the owner of the
-**   corresponding byte in ptr
+** size_t  size    total size of this memory_map
+** size_t  cursor  actual position of the reader/writer
+** uint8_t ptr     pointer to the actual data
 */
 
 typedef struct	s_memory_map
@@ -281,5 +293,8 @@ size_t			in(const void *search,
 					const t_memory_descriptor md,
 					const void *mem,
 					const uint32_t endian);
+
+t_memory_error	cast_memory(t_memory_map out, t_memory_map in,
+							t_cast_memory_descriptor cmd);
 
 #endif

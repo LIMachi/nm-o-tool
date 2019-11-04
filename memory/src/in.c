@@ -28,7 +28,7 @@ size_t	in(const void *search, const t_memory_descriptor md,
 	{
 		sw = (size_t)-1;
 		while (++sw < md.block_size)
-			if (md.endian && md.endian != endian)
+			if (md.endian != endian)
 			{
 				if (((uint8_t*)search)[sw]
 						!= ((uint8_t*)mem)[it * align + md.block_size - sw])

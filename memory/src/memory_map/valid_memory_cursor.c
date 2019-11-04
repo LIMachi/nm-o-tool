@@ -28,7 +28,7 @@ t_memory_error	valid_cursor(t_memory_map *mm,
 		*align = md.block_size + md.align - *align;
 	else
 		*align = md.block_size > md.align ? md.block_size : md.align;
-	if (mm->cursor + *align < mm->cursor || mm->cursor + *align >= mm->size)
+	if (mm->cursor + *align < mm->cursor || mm->cursor + *align > mm->size)
 		return (set_error(ME_INVALID_BLOC_SIZE, ERROR_TUPLE));
 	if (md.nb_blocks && (md.nb_blocks * *align < md.nb_blocks
 						|| md.nb_blocks * *align < *align))
