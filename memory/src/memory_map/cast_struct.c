@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   read_in_memory.c                                   :+:      :+:    :+:   */
+/*   cast_struct.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -12,29 +12,26 @@
 
 #include <memory.h>
 
-t_memory_error	read_in_memory(t_memory_map *mm, void *buffer,
-	const t_memory_descriptor md, const uint32_t endian)
+t_memory_error			cast_struct(t_memory_map out, t_memory_map in,
+	t_cast_struct_descriptor csd)
 {
-	size_t			align;
-	size_t			it;
-	size_t			sw;
+	t_memory_map	sout;
+	t_memory_map	sin;
+	size_t			align_in;
+	size_t			align_out;
+	uint32_t		it;
 
-	if (get_error()->error != ME_OK || valid_cursor(mm, md, &align) != ME_OK)
+	if (valid_cursor(&out,
+			(t_memory_descriptor){1, csd.total_size_out, 1, 0}, &align_out))
 		return (ME_PENDING_ERROR);
-	it = (size_t)-1;
-	if (buffer != NULL)
-		while (++it < md.nb_blocks)
-		{
-			sw = (size_t)-1;
-			if (mm->endian != endian)
-				while (++sw < md.block_size)
-					((uint8_t*)buffer)[it * align + sw] = mm->ptr[mm->cursor
-						+ it * align + md.block_size - sw - 1];
-			else
-				while (++sw < md.block_size)
-					((uint8_t*)buffer)[it * align + sw] = mm->ptr[mm->cursor
-						+ it * align + sw];
-		}
-	mm->cursor += align * md.nb_blocks;
+	if (valid_cursor(&in,
+			(t_memory_descriptor){1, csd.total_size_in, 1, 0}, &align_in))
+		return (ME_PENDING_ERROR);
+	sout = (t_memory_map){csd.total_size_out, 0, out.endian, &out.ptr[out.cursor]};
+	sin = (t_memory_map){csd.total_size_in, 0, in.endian, &in.ptr[in.cursor]};
+	it = (uint32_t)-1;
+	while (++it < csd.nb_members)
+		if (cast_memory(sout, sin, csd.members[it]) != ME_OK)
+			return (ME_PENDING_ERROR);
 	return (ME_OK);
 }

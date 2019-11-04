@@ -14,6 +14,6 @@
 
 t_memory_error	memory_map_clear(t_memory_map *mm)
 {
-	*mm = (t_memory_map){0, 0, MAP_FAILED};
+	*mm = (t_memory_map){0, 0, 0, MAP_FAILED};
 	return (ME_OK);
 }

@@ -6,6 +6,9 @@
 #include <memory.h>
 #include <vm.h>
 
+#include <mach-o/loader.h>
+#include <stddef.h>
+
 struct st{
 	size_t			size;
 
@@ -70,12 +73,32 @@ int	main(void)
 	{
 		unsigned char mem1[8] = {0x80, 6, 5, 4, 3, 2, 1, 0};
 		unsigned char mem2[8];
-		t_cast_memory_descriptor	cmd = {.out = {8, 1, 1, 1, 1}, .in = {4, 1, 1, 0, 1}};
+		t_cast_memory_descriptor	cmd = {.out = {8, 1, 1, 0}, .in = {4, 1, 1, 0}};
 		size_t        sw;
 		for (sw = 0; sw < cmd.in.block_size; ++sw)
 			printf("%hhu%c", mem1[sw], sw + 1 < cmd.in.block_size ? ' ' : '\n');
-		cast_memory((t_memory_map){8, 0, mem2}, (t_memory_map){8, 0, mem1}, cmd);
+		cast_memory((t_memory_map){8, 0, 1, mem2}, (t_memory_map){8, 0, 0, mem1}, cmd);
 		for (sw = 0; sw < 8; ++sw)
 			printf("%hhu%c", mem2[sw], sw + 1 < 8 ? ' ' : '\n');
+	}
+	{
+		t_cast_struct_descriptor test1 = {4, 1, 1, sizeof(struct mach_header), sizeof(struct mach_header_64), {
+			{.in = {4, 1, 4, 0}, .out = {4, 1, 4, 0}},
+			{.in = {sizeof(cpu_type_t), 1, 1, 0}, .out = {sizeof(cpu_type_t), 1, 1, 0}, .delta_in = 4, .delta_out = 4},
+			{.in = {sizeof(cpu_subtype_t), 1, 1, 0}, .out = {sizeof(cpu_subtype_t), 1, 1, 0}, .delta_in = offsetof(struct mach_header, cpusubtype), .delta_out = offsetof(struct mach_header_64, cpusubtype)},
+			{.in = {4, 4, 1, 0}, .out = {4, 5, 1, 0}, .delta_in = offsetof(struct mach_header, filetype), .delta_out = offsetof(struct mach_header_64, filetype)}
+		}};
+		t_cast_struct_descriptor test2 = {4, 1, 1, sizeof(struct mach_header_64), sizeof(struct mach_header_64), {
+			{.in = {4, 1, 4, 0}, .out = {4, 1, 4, 0}},
+			{.in = {sizeof(cpu_type_t), 1, 1, 0}, .out = {sizeof(cpu_type_t), 1, 1, 0}, .delta_in = 4, .delta_out = 4},
+			{.in = {sizeof(cpu_subtype_t), 1, 1, 0}, .out = {sizeof(cpu_subtype_t), 1, 1, 0}, .delta_in = offsetof(struct mach_header_64, cpusubtype), .delta_out = offsetof(struct mach_header_64, cpusubtype)},
+			{.in = {4, 5, 1, 0}, .out = {4, 5, 1, 0}, .delta_in = offsetof(struct mach_header_64, filetype), .delta_out = offsetof(struct mach_header_64, filetype)}
+		}};
+		struct mach_header in32 = {0xFEEDFACE, 42, 1, MH_OBJECT, 3, 45788, 0};
+		struct mach_header_64 tmp;
+		struct mach_header_64 out64;
+		cast_struct((t_memory_map){sizeof(struct mach_header_64), 0, 1, (uint8_t*)&tmp}, (t_memory_map){sizeof(struct mach_header), 0, 0, (uint8_t*)&in32}, test1);
+		cast_struct((t_memory_map){sizeof(struct mach_header_64), 0, 0, (uint8_t*)&out64}, (t_memory_map){sizeof(struct mach_header_64), 0, 1, (uint8_t*)&tmp}, test2);
+		printf("\n");
 	}
 }

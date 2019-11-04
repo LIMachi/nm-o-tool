@@ -42,8 +42,6 @@ typedef enum	e_memory_error
 */
 
 /*
-** sizeof(t_memory_descriptor): 16
-** -
 ** uint32_t block_size
 ** uint32_t nb_blocks
 ** uint32_t align      how the cursor must be aligned after accessing each block
@@ -61,14 +59,11 @@ typedef struct	s_memory_descriptor
 {
 	uint32_t	block_size;
 	uint32_t	nb_blocks;
-	uint32_t	align;
-	uint32_t	endian : 1;
+	uint32_t	align : 31;
 	uint32_t	sign : 1;
 }				t_memory_descriptor;
 
 /*
-** sizeof(t_struct_descriptor): 528
-** -
 ** uint32_t            nb_members  how many t_memory_descriptor there are
 ** uint32_t            align       how the cursor must be aligned after
 **                                 accessing each member
@@ -103,8 +98,6 @@ typedef struct	s_struct_descriptor
 }				t_struct_descriptor;
 
 /*
-** sizeof(t_cast_memory_descriptor): 40
-** -
 ** t_memory_descriptor in
 ** t_memory_descriptor out
 ** int64_t             delta
@@ -121,16 +114,14 @@ typedef struct	s_cast_memory_descriptor
 {
 	t_memory_descriptor	in;
 	t_memory_descriptor	out;
-	int64_t				delta;
+	int64_t				delta_in;
+	int64_t				delta_out;
 }				t_cast_memory_descriptor;
 
 # define CTD_VOID 0x80000000ll
 
 /*
-** sizeof(t_cast_struct_descriptor): 1312
-** -
 ** uint32_t                 nb_members
-** uint32_t                 swap
 ** uint32_t                 align_in
 ** uint32_t                 align_out
 ** uint64_t                 total_size_in
@@ -144,7 +135,6 @@ typedef struct	s_cast_memory_descriptor
 typedef struct	s_cast_struct_descriptor
 {
 	uint32_t					nb_members;
-	uint32_t					swap;
 	uint32_t					align_in;
 	uint32_t					align_out;
 	uint64_t					total_size_in;
@@ -224,6 +214,7 @@ typedef struct	s_memory_map
 {
 	size_t			size;
 	size_t			cursor;
+	uint32_t		endian;
 	uint8_t			*ptr;
 }				t_memory_map;
 
@@ -296,5 +287,14 @@ size_t			in(const void *search,
 
 t_memory_error	cast_memory(t_memory_map out, t_memory_map in,
 							t_cast_memory_descriptor cmd);
+
+t_memory_error	cast_struct(t_memory_map out, t_memory_map in,
+							t_cast_struct_descriptor csd);
+
+/*
+**
+*/
+
+uint32_t		get_local_endian(void);
 
 #endif

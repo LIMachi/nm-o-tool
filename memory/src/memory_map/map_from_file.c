@@ -59,6 +59,6 @@ t_memory_error	memory_map_from_file(t_memory_map *mm,
 	close(fd);
 	if (mm->ptr == MAP_FAILED)
 		return (set_error(ME_MAPPING_FAILED, ERROR_TUPLE));
-	*mm = (t_memory_map){mm->size, 0, mm->ptr};
+	*mm = (t_memory_map){mm->size, 0, 1, mm->ptr};
 	return (ME_OK);
 }
