@@ -12,6 +12,15 @@
 
 #include <vm.h>
 
+static void	*realloc_f(void *ptr, size_t size)
+{
+	void	*tmp;
+
+	if ((tmp = realloc(ptr, size)) == NULL)
+		free(ptr);
+	return (tmp);
+}
+
 int	vm_map_new_entry(t_vm_map *vmm, size_t start, size_t finish,
 	uint64_t id)
 {
@@ -30,7 +39,7 @@ int	vm_map_new_entry(t_vm_map *vmm, size_t start, size_t finish,
 	while (++t < vmm->nb_entries)
 		if (start <= vmm->entries[t].finish && finish >= vmm->entries[t].start)
 			return (set_error(VME_INVALID_MAPPING, ERROR_TUPLE));
-	if ((vmm->entries = reallocf(vmm->entries,
+	if ((vmm->entries = realloc_f(vmm->entries,
 			sizeof(t_vm_map_entry) * (vmm->nb_entries + 1))) == NULL)
 		return (set_error(VME_MAPPING_FAILED, ERROR_TUPLE));
 	vmm->entries[vmm->nb_entries++] = (t_vm_map_entry){id, start, finish};

@@ -15,6 +15,7 @@
 
 # include <stdlib.h>
 # include <sys/mman.h>
+# include <stdint.h>
 
 # include <error.h>
 # include <vm.h>

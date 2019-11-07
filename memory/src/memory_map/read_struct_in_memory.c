@@ -26,7 +26,8 @@ t_memory_error	read_struct_in_memory(t_memory_map *mm, void *buffer,
 	while (++it < sd.nb_members)
 	{
 		t = mm->cursor;
-		if (read_in_memory(mm, buffer != NULL ? &buffer[c] : NULL,
+		if (read_in_memory(mm, buffer != NULL
+				? &((uint8_t*)buffer)[c] : NULL,
 				sd.member[it], endian) != ME_OK)
 			return (ME_PENDING_ERROR);
 		t = mm->cursor - t;

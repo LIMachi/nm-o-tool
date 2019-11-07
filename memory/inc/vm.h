@@ -14,6 +14,7 @@
 # define VM_H
 
 # include <stdlib.h>
+# include <stdint.h>
 
 # include <error.h>
 

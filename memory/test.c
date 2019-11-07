@@ -6,7 +6,7 @@
 #include <memory.h>
 #include <vm.h>
 
-#include <mach-o/loader.h>
+//#include <mach-o/loader.h>
 #include <stddef.h>
 
 struct st{
@@ -81,7 +81,7 @@ int	main(void)
 		for (sw = 0; sw < 8; ++sw)
 			printf("%hhu%c", mem2[sw], sw + 1 < 8 ? ' ' : '\n');
 	}
-	{
+	/*{
 		t_cast_struct_descriptor test1 = {4, 1, 1, sizeof(struct mach_header), sizeof(struct mach_header_64), {
 			{.in = {4, 1, 4, 0}, .out = {4, 1, 4, 0}},
 			{.in = {sizeof(cpu_type_t), 1, 1, 0}, .out = {sizeof(cpu_type_t), 1, 1, 0}, .delta_in = 4, .delta_out = 4},
@@ -100,5 +100,5 @@ int	main(void)
 		cast_struct((t_memory_map){sizeof(struct mach_header_64), 0, 1, (uint8_t*)&tmp}, (t_memory_map){sizeof(struct mach_header), 0, 0, (uint8_t*)&in32}, test1);
 		cast_struct((t_memory_map){sizeof(struct mach_header_64), 0, 0, (uint8_t*)&out64}, (t_memory_map){sizeof(struct mach_header_64), 0, 1, (uint8_t*)&tmp}, test2);
 		printf("\n");
-	}
+	}*/
 }

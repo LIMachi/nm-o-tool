@@ -12,6 +12,15 @@
 
 #include <vm.h>
 
+static void	*realloc_f(void *ptr, size_t size)
+{
+	void	*tmp;
+
+	if ((tmp = realloc(ptr, size)) == NULL)
+		free(ptr);
+	return (tmp);
+}
+
 int	vm_map_recut_entry(t_vm_map *vmm, t_vm_map_entry new, uint64_t original_id)
 {
 	size_t	t;
@@ -38,21 +47,21 @@ int	vm_map_recut_entry(t_vm_map *vmm, t_vm_map_entry new, uint64_t original_id)
 			vmm->entries[t].id = new.id;
 		else
 		{
-			if ((vmm->entries = reallocf(vmm->entries, sizeof(t_vm_map_entry) * (1 + vmm->nb_entries))) == NULL)
+			if ((vmm->entries = realloc_f(vmm->entries, sizeof(t_vm_map_entry) * (1 + vmm->nb_entries))) == NULL)
 				return (set_error(VME_MAPPING_FAILED, ERROR_TUPLE));
 			vmm->entries[t].start = new.finish + 1;
 			vmm->entries[vmm->nb_entries++] = new;
 		}
 	else if (new.finish == vmm->entries[t].finish)
 	{
-		if ((vmm->entries = reallocf(vmm->entries, sizeof(t_vm_map_entry) * (1 + vmm->nb_entries))) == NULL)
+		if ((vmm->entries = realloc_f(vmm->entries, sizeof(t_vm_map_entry) * (1 + vmm->nb_entries))) == NULL)
 			return (set_error(VME_MAPPING_FAILED, ERROR_TUPLE));
 		vmm->entries[t].finish = new.start - 1;
 		vmm->entries[vmm->nb_entries++] = new;
 	}
 	else
 	{
-		if ((vmm->entries = reallocf(vmm->entries, sizeof(t_vm_map_entry) * (2 + vmm->nb_entries))) == NULL)
+		if ((vmm->entries = realloc_f(vmm->entries, sizeof(t_vm_map_entry) * (2 + vmm->nb_entries))) == NULL)
 			return (set_error(VME_MAPPING_FAILED, ERROR_TUPLE));
 		vmm->entries[vmm->nb_entries++] = new;
 		vmm->entries[vmm->nb_entries++] = (t_vm_map_entry){.start = new.finish + 1, .finish = vmm->entries[t].finish, .id = vmm->entries[t].id};
