@@ -70,7 +70,7 @@ int	main(void)
 			   (int32_t)(uint16_t)-42, (uint16_t)(int32_t)0xf8423964, (uint16_t)(int32_t)0xf8423964, 0xf8423964,
 			   0xf8423964);
 	}
-	{
+/*	{
 		unsigned char mem1[8] = {0x80, 6, 5, 4, 3, 2, 1, 0};
 		unsigned char mem2[8];
 		t_cast_memory_descriptor	cmd = {.out = {8, 1, 1, 0}, .in = {4, 1, 1, 0}};
@@ -80,7 +80,7 @@ int	main(void)
 		cast_memory((t_memory_map){8, 0, 1, mem2}, (t_memory_map){8, 0, 0, mem1}, cmd);
 		for (sw = 0; sw < 8; ++sw)
 			printf("%hhu%c", mem2[sw], sw + 1 < 8 ? ' ' : '\n');
-	}
+	}*/
 	/*{
 		t_cast_struct_descriptor test1 = {4, 1, 1, sizeof(struct mach_header), sizeof(struct mach_header_64), {
 			{.in = {4, 1, 4, 0}, .out = {4, 1, 4, 0}},

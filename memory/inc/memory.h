@@ -111,36 +111,32 @@ typedef struct	s_struct_descriptor
 ** Note: using the same buffer in and out of a cast is undefined behavior
 */
 
-typedef struct	s_cast_memory_descriptor
-{
-	t_memory_descriptor	in;
-	t_memory_descriptor	out;
-	int64_t				delta_in;
-	int64_t				delta_out;
-}				t_cast_memory_descriptor;
-
 # define CTD_VOID 0x80000000ll
 
 /*
-** uint32_t                 nb_members
-** uint32_t                 align_in
-** uint32_t                 align_out
-** uint64_t                 total_size_in
-** uint64_t                 total_size_out
-** t_cast_memory_descriptor members[32]
+** t_struct_descriptor  in;
+** t_struct_descriptor  out;
+** uint8_t              mapping[32]
 ** -
-** perform a series of t_cast_type_descriptor on one buffer to the other,
-** see example below
+** describes how to convert a structure to another (the mapping list is used to
+** tell how the members of 'in' should be inserted in 'out')
+** -----------------------------------------------------------------------------
+** example:
+** struct {int life; int pos[3];} a = {100, {0, 42, 64}};
+** struct {int pos[3]; size_t id;} b;
+** t_struct_descriptor asd = {2, 4, 16, {{4, 1, 4, 1}, {4, 3, 4, 1}}};
+** t_struct_descriptor bsd = {2, 8, 24, {{4, 3, 8, 1}, {8, 1, 8, 0}}};
+** t_cast_struct_descriptor a_to_b = {asd, bsd, {0xFF, 0}};
+** // 0xFF: void/do not copy this member (we don't want to copy the 'life' field
+** // 0: move the second member of 'in' to the first (0) member of 'out'
+** // the rest of 'out' is initialized to 0
 */
 
 typedef struct	s_cast_struct_descriptor
 {
-	uint32_t					nb_members;
-	uint32_t					align_in;
-	uint32_t					align_out;
-	uint64_t					total_size_in;
-	uint64_t					total_size_out;
-	t_cast_memory_descriptor	members[32];
+	t_struct_descriptor	in;
+	t_struct_descriptor	out;
+	uint8_t				mapping[32];
 }				t_cast_struct_descriptor;
 
 /*
@@ -189,7 +185,6 @@ union			u_type_descriptor
 {
 	t_memory_descriptor			array;
 	t_struct_descriptor			structure;
-	t_cast_memory_descriptor	cast_array;
 	t_cast_struct_descriptor	cast_structure;
 };
 
@@ -213,8 +208,8 @@ typedef struct	s_type_descriptor
 
 typedef struct	s_memory_map
 {
-	size_t			size;
-	size_t			cursor;
+	uint64_t		size;
+	uint64_t		cursor;
 	uint32_t		endian;
 	uint8_t			*ptr;
 }				t_memory_map;
@@ -243,7 +238,7 @@ t_memory_error	memory_map_resize(t_memory_map *mm,
 
 t_memory_error	valid_cursor(t_memory_map *mm,
 							const t_memory_descriptor md,
-							size_t *align);
+							uint64_t *align);
 
 /*
 ** t_memory_error    read_in_memory(t_memory_map *mm,
@@ -286,10 +281,10 @@ size_t			in(const void *search,
 					const void *mem,
 					const uint32_t endian);
 
-t_memory_error	cast_memory(t_memory_map out, t_memory_map in,
-							t_cast_memory_descriptor cmd);
+t_memory_error	cast_memory(t_memory_map *out, t_memory_map *in,
+	t_memory_descriptor md_out, t_memory_descriptor md_in);
 
-t_memory_error	cast_struct(t_memory_map out, t_memory_map in,
+t_memory_error	cast_struct(t_memory_map *out, t_memory_map *in,
 							t_cast_struct_descriptor csd);
 
 /*

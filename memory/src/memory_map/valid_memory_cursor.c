@@ -14,9 +14,9 @@
 
 t_memory_error	valid_cursor(t_memory_map *mm,
 							const t_memory_descriptor md,
-							size_t *align)
+							uint64_t *align)
 {
-	size_t	tmp;
+	uint64_t	tmp;
 
 	if (get_error()->error != ME_OK)
 		return (ME_PENDING_ERROR);

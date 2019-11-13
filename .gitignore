@@ -57,3 +57,5 @@ cmake-build-debug
 .DS_Store
 .makefile_files
 build
+/*.a
+/*.bin
