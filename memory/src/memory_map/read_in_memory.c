@@ -15,17 +15,17 @@
 t_memory_error	read_in_memory(t_memory_map *mm, void *buffer,
 	const t_memory_descriptor md, const uint32_t endian)
 {
-	size_t			align;
-	size_t			it;
-	size_t			sw;
+	uint64_t		align;
+	uint64_t		it;
+	uint64_t		sw;
 
 	if (get_error()->error != ME_OK || valid_cursor(mm, md, &align) != ME_OK)
 		return (ME_PENDING_ERROR);
-	it = (size_t)-1;
+	it = (uint64_t)-1;
 	if (buffer != NULL)
 		while (++it < md.nb_blocks)
 		{
-			sw = (size_t)-1;
+			sw = (uint64_t)-1;
 			if (mm->endian != endian)
 				while (++sw < md.block_size)
 					((uint8_t*)buffer)[it * align + sw] = mm->ptr[mm->cursor

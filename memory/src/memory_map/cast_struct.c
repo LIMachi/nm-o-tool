@@ -21,7 +21,7 @@ static inline uint64_t			jump_member(t_memory_descriptor md,
 	if (jump % md.align)
 		jump += md.align - jump % md.align;
 	jump *= md.nb_blocks;
-	if (jump & member_align)
+	if (jump % member_align)
 		jump += member_align - jump % member_align;
 	return (jump);
 }

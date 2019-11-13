@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   test.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: hmartzol <hmartzol@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2000/00/00 00:00:00 by hmartzol          #+#    #+#             */
+/*   Updated: 2000/00/00 00:00:00 by hmartzol         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include <stdio.h>
 #include <unistd.h>
 #include <stdint.h>
@@ -6,99 +18,139 @@
 #include <memory.h>
 #include <vm.h>
 
-//#include <mach-o/loader.h>
+#include <mach-o/loader.h>
+#include <mach-o/fat.h>
+#include <ar.h>
+
+#include <string.h>
+
 #include <stddef.h>
 
-struct st{
-	size_t			size;
-
-	int				endian;
-	int				sign;
-};
-
 /*
-** convert an integer memory to another (conversion must change the size in
-** bytes and may change the signedness or the endianese of the integer)
-** this function is not protected against invalid addresses and values of
-** description structures
+** 0b001 -> true: 32 bit, false: 64 bit
+** 0b010 -> true: reversed, false: normal
+** 0b100 -> true: fat, false: object
+** 0x08  -> reserved for archives, other flags are ignored
+** 0xFF  -> reserved for error
 */
 
-void	conv(unsigned char *mem1, struct st s1,
-			unsigned char *mem2, struct st s2)
+uint8_t				mm_file_type(t_memory_map *mm)
 {
-	unsigned char	s;
-	size_t			sw;
+	const uint32_t	magics[8] = {MH_MAGIC_64, MH_MAGIC, MH_CIGAM_64, MH_CIGAM,
+							FAT_MAGIC_64, FAT_MAGIC, FAT_CIGAM_64, FAT_CIGAM};
+	uint32_t		magic;
+	uint8_t			it;
 
-	s = (s1.sign && (mem1[s1.endian == 1234 ? s1.size - 1 : 0] & 0x80)) * 0xFF;
-	sw = (size_t)-1;
-	if (s1.endian == 1234 && s2.endian == 4321)
-		while (++sw < s2.size)
-			mem2[sw] = s2.size - sw - 1 < s1.size ? mem1[s2.size - sw - 1] : s;
-	if (s1.endian == 4321 && s2.endian == 1234)
-		while (++sw < s2.size)
-			mem2[sw] = s1.size >= sw + 1 ? mem1[s1.size - sw - 1] : s;
-	if (s1.endian == 1234 && s2.endian == 1234)
-		while (++sw < s2.size)
-			mem2[sw] = sw < s1.size ? mem1[sw] : s;
-	if (s1.endian == 4321 && s2.endian == 4321)
-		while (++sw < s2.size)
-			mem2[sw] = sw + s1.size - s2.size < s1.size
-				? mem1[sw + s1.size - s2.size] : s;
+	if (mm->size < sizeof(uint32_t))
+		return (0xFF);
+	magic = *(uint32_t*)mm->ptr;
+	it = 0;
+	while (it < 8 && magics[it] != magic)
+		++it;
+	if (it < 8)
+		return (it);
+	if (mm->size < SARMAG || strncmp((char*)mm->ptr, ARMAG, SARMAG))
+		return (0xFF);
+	return (8);
 }
 
-int	main(void)
-{
-	{
-		struct st     st1     = {4, 4321, 1};
-		struct st     st2     = {2, 1234, 1};
-		size_t        sw;
-		unsigned char mem1[8] = {0x80, 6, 5, 4, 3, 2, 1, 0};
-		unsigned char mem2[8];
-		for (sw = 0; sw < st1.size; ++sw)
-			printf("%hhu%c", mem1[sw], sw + 1 < st1.size ? ' ' : '\n');
-		printf("e: %.4d - s: %zu (0x%llX) -> e: %.4d - s: %zu\n", st1.endian, st1.size, *(long long unsigned *)mem1,
-			   st2.endian, st2.size);
-		conv(mem1, st1, mem2, st2);
-		printf("(0x%llX)\n", *(long long unsigned *)mem2);
-		for (sw = 0; sw < st2.size; ++sw)
-			printf("%hhu%c", mem2[sw], sw + 1 < st2.size ? ' ' : '\n');
-		int16_t  i16;
-		uint32_t u32;
-		i16 = -42;
-		u32 = i16;
-		printf("test: %hd %hx %u %x %d %x %hd %hx %d %x\n\n", i16, i16, u32, u32, (int32_t)(uint16_t)-42,
-			   (int32_t)(uint16_t)-42, (uint16_t)(int32_t)0xf8423964, (uint16_t)(int32_t)0xf8423964, 0xf8423964,
-			   0xf8423964);
+t_struct_descriptor	g_mach_header_descriptor = {
+	.nb_members = 7, .align = 4, .total_size = sizeof(struct mach_header),
+	.member = {
+		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0},
+		{.block_size = sizeof(cpu_type_t), .nb_blocks = 1, .align = 4,
+			.sign = 0},
+		{.block_size = sizeof(cpu_subtype_t), .nb_blocks = 1, .align = 4,
+			.sign = 0},
+		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0},
+		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0},
+		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0},
+		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0}
 	}
-/*	{
-		unsigned char mem1[8] = {0x80, 6, 5, 4, 3, 2, 1, 0};
-		unsigned char mem2[8];
-		t_cast_memory_descriptor	cmd = {.out = {8, 1, 1, 0}, .in = {4, 1, 1, 0}};
-		size_t        sw;
-		for (sw = 0; sw < cmd.in.block_size; ++sw)
-			printf("%hhu%c", mem1[sw], sw + 1 < cmd.in.block_size ? ' ' : '\n');
-		cast_memory((t_memory_map){8, 0, 1, mem2}, (t_memory_map){8, 0, 0, mem1}, cmd);
-		for (sw = 0; sw < 8; ++sw)
-			printf("%hhu%c", mem2[sw], sw + 1 < 8 ? ' ' : '\n');
-	}*/
-	/*{
-		t_cast_struct_descriptor test1 = {4, 1, 1, sizeof(struct mach_header), sizeof(struct mach_header_64), {
-			{.in = {4, 1, 4, 0}, .out = {4, 1, 4, 0}},
-			{.in = {sizeof(cpu_type_t), 1, 1, 0}, .out = {sizeof(cpu_type_t), 1, 1, 0}, .delta_in = 4, .delta_out = 4},
-			{.in = {sizeof(cpu_subtype_t), 1, 1, 0}, .out = {sizeof(cpu_subtype_t), 1, 1, 0}, .delta_in = offsetof(struct mach_header, cpusubtype), .delta_out = offsetof(struct mach_header_64, cpusubtype)},
-			{.in = {4, 4, 1, 0}, .out = {4, 5, 1, 0}, .delta_in = offsetof(struct mach_header, filetype), .delta_out = offsetof(struct mach_header_64, filetype)}
-		}};
-		t_cast_struct_descriptor test2 = {4, 1, 1, sizeof(struct mach_header_64), sizeof(struct mach_header_64), {
-			{.in = {4, 1, 4, 0}, .out = {4, 1, 4, 0}},
-			{.in = {sizeof(cpu_type_t), 1, 1, 0}, .out = {sizeof(cpu_type_t), 1, 1, 0}, .delta_in = 4, .delta_out = 4},
-			{.in = {sizeof(cpu_subtype_t), 1, 1, 0}, .out = {sizeof(cpu_subtype_t), 1, 1, 0}, .delta_in = offsetof(struct mach_header_64, cpusubtype), .delta_out = offsetof(struct mach_header_64, cpusubtype)},
-			{.in = {4, 5, 1, 0}, .out = {4, 5, 1, 0}, .delta_in = offsetof(struct mach_header_64, filetype), .delta_out = offsetof(struct mach_header_64, filetype)}
-		}};
-		struct mach_header in32 = {0xFEEDFACE, 42, 1, MH_OBJECT, 3, 45788, 0};
-		struct mach_header_64 tmp;
-		struct mach_header_64 out64;
-		cast_struct((t_memory_map){sizeof(struct mach_header_64), 0, 1, (uint8_t*)&tmp}, (t_memory_map){sizeof(struct mach_header), 0, 0, (uint8_t*)&in32}, test1);
-		cast_struct((t_memory_map){sizeof(struct mach_header_64), 0, 0, (uint8_t*)&out64}, (t_memory_map){sizeof(struct mach_header_64), 0, 1, (uint8_t*)&tmp}, test2);
-		printf("\n");
-	}*/
+};
+
+t_struct_descriptor	g_mach_header_64_descriptor = {
+	.nb_members = 8, .align = 4, .total_size = sizeof(struct mach_header_64),
+	.member = {
+		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0},
+		{.block_size = sizeof(cpu_type_t), .nb_blocks = 1, .align = 4,
+			.sign = 0},
+		{.block_size = sizeof(cpu_subtype_t), .nb_blocks = 1, .align = 4,
+			.sign = 0},
+		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0},
+		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0},
+		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0},
+		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0},
+		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0}
+	}
+};
+
+int					macho(t_memory_map *mm, int b32)
+{
+	uint8_t					tmp[sizeof(struct mach_header_64)];
+	struct mach_header_64	head;
+	int						endian;
+	t_memory_map			mm_tmp;
+	t_memory_map			mm_head;
+
+	endian = get_local_endian();
+	mm_head = (t_memory_map){sizeof(head), 0, endian, (uint8_t*)&head};
+	if (b32)
+	{
+		if (read_struct_in_memory(mm, &tmp, g_mach_header_descriptor, endian))
+			return (1);
+		mm_tmp = (t_memory_map){sizeof(tmp), 0, endian, tmp};
+		if (cast_struct(&mm_head, &mm_tmp, (t_cast_struct_descriptor){
+				g_mach_header_descriptor, g_mach_header_64_descriptor, {
+				0, 1, 2, 3, 4, 5, 6}}))
+			return (1);
+	}
+	else if (read_struct_in_memory(mm, &head, g_mach_header_64_descriptor, endian))
+		return (1);
+	return (0);
+}
+
+int					test(t_memory_map *mm)
+{
+	uint8_t type;
+
+	type = mm_file_type(mm);
+	if (type == 0xFF)
+		return (set_error(-1, ERROR_TUPLE));
+	if (type == 8)
+		return (0);
+	if (type & 0b010)
+		mm->endian = !get_local_endian();
+	else
+		mm->endian = get_local_endian();
+	if (type & 0b100)
+		NULL;
+	else
+		return (macho(mm, type & 0b001));
+	return (0);
+}
+
+int					main(int argc, char *argv[])
+{
+	static char		*replace_argv[2] = {NULL, "a.out"};
+	int				i;
+	t_memory_map	mm;
+
+	if (argc == 1)
+	{
+		replace_argv[0] = argv[0];
+		argv = replace_argv;
+		argc = 2;
+	}
+	i = 0;
+	memory_map_clear(&mm);
+	while (++i < argc)
+	{
+		write(1, "\n", 1);
+		if (memory_map_from_file(&mm, argv[i]) != ME_OK)
+			return (get_error()->error);
+		if (test(&mm))
+			return (get_error()->error);
+	}
+	return (0);
 }

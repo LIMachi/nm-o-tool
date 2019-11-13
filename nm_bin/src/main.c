@@ -41,27 +41,27 @@
 
 /*
 ** options: (mac)
-** -a: all symbol entries														-*
-** -g: only external															-*
-** -n: sort numerically after alphabetically									-*
-** -o: prepend file or archive element to each line								-*
-** -p: symbol-table order (no sort)												-*
-** -r: reverse sort																-*
-** -u: only undefined															-*
-** -U: don't display undefined													-*
-** -m: extend format of type instead of letters									-
-** -x: hexadecimal print of type + position of symbol table						-
-** -j: only names of symbols, no type or position								-
-** -s segname sectname: only list symbols in section (segname, sectname)		-
-** -s (segname,sectname): used version of andling -s (only one string)			-
-** -arch: architecture to be printed in fat files, all is an option				-
-** --arch: used version of andling -arch										-
-** -f format: bsd, sysv, posix, darwin											-
-** -A: same as -o, but print full path											-
-** -P: portable output (which ever this means)									-
-** -t format: precise the format to be used by -P								-
-** 	d: decimal, o: octal, x: hexadecimal										-
-** -L: see man, i'm tired														-
+** -a: all symbol entries
+** -g: only external
+** -n: sort numerically after alphabetically
+** -o: prepend file or archive element to each line
+** -p: symbol-table order (no sort)
+** -r: reverse sort
+** -u: only undefined
+** -U: don't display undefined
+** -m: extend format of type instead of letters
+** -x: hexadecimal print of type + position of symbol table
+** -j: only names of symbols, no type or position
+** -s segname sectname: only list symbols in section (segname, sectname)
+** -s (segname,sectname): used version of andling -s (only one string)
+** -arch: architecture to be printed in fat files, all is an option
+** --arch: used version of andling -arch
+** -f format: bsd, sysv, posix, darwin
+** -A: same as -o, but print full path
+** -P: portable output (which ever this means)
+** -t format: precise the format to be used by -P
+** 	d: decimal, o: octal, x: hexadecimal
+** -L: see man, i'm tired
 */
 
 /*

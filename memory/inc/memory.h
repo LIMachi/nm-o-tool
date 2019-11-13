@@ -201,9 +201,10 @@ typedef struct	s_type_descriptor
 }				t_type_descriptor;
 
 /*
-** size_t  size    total size of this memory_map
-** size_t  cursor  actual position of the reader/writer
-** uint8_t ptr     pointer to the actual data
+** uint64_t size    total size of this memory_map
+** uint64_t cursor  actual position of the reader/writer
+** uint32_t endian  true: big endian, false: little endian
+** uint8_t* ptr     pointer to the actual data
 */
 
 typedef struct	s_memory_map
@@ -288,7 +289,7 @@ t_memory_error	cast_struct(t_memory_map *out, t_memory_map *in,
 							t_cast_struct_descriptor csd);
 
 /*
-**
+** -
 */
 
 uint32_t		get_local_endian(void);
