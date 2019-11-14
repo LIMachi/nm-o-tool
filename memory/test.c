@@ -18,6 +18,8 @@
 #include <memory.h>
 #include <vm.h>
 
+#include <globals.h>
+
 #include <mach-o/loader.h>
 #include <mach-o/fat.h>
 #include <ar.h>
@@ -53,37 +55,6 @@ uint8_t				mm_file_type(t_memory_map *mm)
 		return (0xFF);
 	return (8);
 }
-
-t_struct_descriptor	g_mach_header_descriptor = {
-	.nb_members = 7, .align = 4, .total_size = sizeof(struct mach_header),
-	.member = {
-		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0},
-		{.block_size = sizeof(cpu_type_t), .nb_blocks = 1, .align = 4,
-			.sign = 0},
-		{.block_size = sizeof(cpu_subtype_t), .nb_blocks = 1, .align = 4,
-			.sign = 0},
-		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0},
-		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0},
-		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0},
-		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0}
-	}
-};
-
-t_struct_descriptor	g_mach_header_64_descriptor = {
-	.nb_members = 8, .align = 4, .total_size = sizeof(struct mach_header_64),
-	.member = {
-		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0},
-		{.block_size = sizeof(cpu_type_t), .nb_blocks = 1, .align = 4,
-			.sign = 0},
-		{.block_size = sizeof(cpu_subtype_t), .nb_blocks = 1, .align = 4,
-			.sign = 0},
-		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0},
-		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0},
-		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0},
-		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0},
-		{.block_size = sizeof(uint32_t), .nb_blocks = 1, .align = 4, .sign = 0}
-	}
-};
 
 int					macho(t_memory_map *mm, int b32)
 {
